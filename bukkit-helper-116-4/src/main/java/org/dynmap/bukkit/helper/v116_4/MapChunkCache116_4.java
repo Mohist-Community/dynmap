@@ -14,9 +14,11 @@ import org.dynmap.bukkit.helper.SnapshotCache.SnapshotRec;
 import org.dynmap.renderer.DynmapBlockState;
 import org.dynmap.utils.DynIntHashMap;
 import org.dynmap.utils.VisibilityLimit;
+import org.dynmap.Log;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.lang.reflect.Field;
 
 /**
  * Container for managing chunks - dependent upon using chunk snapshots, since rendering is off server thread
@@ -313,12 +315,47 @@ public class MapChunkCache116_4 extends AbstractMapChunkCache {
 		}
 	}
 	
+	private static Field chunkLoaded = null;
+	
+	static 
+	{
+		try 
+		{
+			chunkLoaded = Chunk.class.getDeclaredField("loaded");
+			if(chunkLoaded.getType().isAssignableFrom(boolean.class))
+				chunkLoaded.setAccessible(true);
+			else
+				chunkLoaded = null;
+		} 
+		catch (NoSuchFieldException ex) 
+		{
+			chunkLoaded = null;
+		}
+		
+		if (chunkLoaded == null)
+			Log.severe("Unable to find field 'loaded' for " + Chunk.class.getName());
+	}
+	
+	private static boolean isChunkLoaded(Chunk chunk)
+	{
+		try 
+		{
+			return chunkLoaded != null ? (boolean)chunkLoaded.get(chunk) : false;
+		}
+		catch (Exception ex) 
+		{
+			Log.severe("Unable to access field 'loaded' for " + Chunk.class.getName());
+			ex.printStackTrace();
+		}
+		return false;
+	}
+	
     private NBTTagCompound fetchLoadedChunkNBT(World w, int x, int z) {
         CraftWorld cw = (CraftWorld) w;
         NBTTagCompound nbt = null;
         if (cw.isChunkLoaded(x, z)) {
             Chunk c = cw.getHandle().getChunkAt(x,  z);
-            if ((c != null) && c.loaded) {
+            if ((c != null) && isChunkLoaded(c)) {
                 nbt = ChunkRegionLoader.saveChunk(cw.getHandle(), c);
             }
         }
