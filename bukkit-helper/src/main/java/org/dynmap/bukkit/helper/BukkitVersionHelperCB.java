@@ -60,14 +60,9 @@ public class BukkitVersionHelperCB extends BukkitVersionHelperGeneric {
         Server srv = Bukkit.getServer();
         /* Get getHandle() method */
         try {
-			try {
-				Class.forName("red.mohist.Mohist");
-				return "net.minecraft.server.v1_12_R1";
-			} catch (Exception x) {
-				Method m = srv.getClass().getMethod("getHandle");
-				Object scm = m.invoke(srv); /* And use it to get SCM (nms object) */
-				return scm.getClass().getPackage().getName();
-			}
+            Method m = srv.getClass().getMethod("getHandle");
+            Object scm = m.invoke(srv); /* And use it to get SCM (nms object) */
+            return scm.getClass().getPackage().getName();
         } catch (Exception x) {
             Log.severe("Error finding net.minecraft.server packages");
             return null;
@@ -77,56 +72,51 @@ public class BukkitVersionHelperCB extends BukkitVersionHelperGeneric {
     protected void loadNMS() {
         // Get block fields
         nmsblock = getNMSClass("net.minecraft.server.Block");
-	    try {
-			nmsblockarray = getNMSClass("[Lnet.minecraft.block.Block;");
-		} catch (Exception x) {
-			nmsblockarray = getNMSClass("[Lnet.minecraft.server.Block;");
-		}
-        nmsmaterial = getNMSClass("net.minecraft.server.Material");
-        if (isBlockIdNeeded()) {   // Not needed for 1.13+
-            blockbyid = getFieldNoFail(nmsblock, new String[] { "byId" }, nmsblockarray);
-            if (blockbyid == null) {
-                blockbyidfunc = getMethod(nmsblock, new String[] { "getById", "e" }, new Class[] { int.class });
+        nmsblockarray = getNMSClass("[Lnet.minecraft.server.Block;");
+        if (isBlockMaterialNeeded()) {
+            nmsmaterial = getNMSClass("net.minecraft.server.Material");
+            if (isBlockIdNeeded()) {   // Not needed for 1.13+
+                blockbyid = getFieldNoFail(nmsblock, new String[] { "byId" }, nmsblockarray);
+                if (blockbyid == null) {
+                    blockbyidfunc = getMethod(nmsblock, new String[] { "getById", "e" }, new Class[] { int.class });
+                }
             }
+            material = getPrivateField(nmsblock, new String[] { "material" }, nmsmaterial);
+            getbycombinedid = getMethod(nmsblock, new String[] { "getByCombinedId" }, new Class[] { int.class });
+            // Get material methods
+            material_issolid = getMethod(nmsmaterial, new String[] { "isSolid" }, nulltypes);
+            material_isliquid = getMethod(nmsmaterial, new String[] { "isLiquid" }, nulltypes);        	
         }
-        material = getPrivateField(nmsblock, new String[] { "material" }, nmsmaterial);
-        getbycombinedid = getMethod(nmsblock, new String[] { "getByCombinedId" }, new Class[] { int.class });
-        // Get material methods
-        material_issolid = getMethod(nmsmaterial, new String[] { "isSolid" }, nulltypes);
-        material_isliquid = getMethod(nmsmaterial, new String[] { "isLiquid" }, nulltypes);
-
         /* Set up biomebase fields */
-        biomebase = getNMSClass("net.minecraft.server.BiomeBase");
-	    try {
-			biomebasearray = getNMSClass("[Lnet.minecraft.world.biome.Biome;");
-		} catch (Exception x) {
-			biomebasearray = getNMSClass("[Lnet.minecraft.server.BiomeBase;");
-		}
-        biomebaselist = getPrivateFieldNoFail(biomebase, new String[] { "biomes" }, biomebasearray);
-        if ((biomebaselist == null) && isBiomeBaseListNeeded()) {
-            getbiomefunc = getMethodNoFail(biomebase, new String[] { "getBiome" }, new Class[] { int.class, biomebase });
-            if (getbiomefunc == null) {
-                getbiomebyid = getMethod(biomebase, new String[] { "a" }, new Class[] { int.class} );
-            }
-        }
-        biomebasetempfunc = getMethodNoFail(biomebase, new String[] { "getTemperature" }, nulltypes);
-        if (biomebasetempfunc == null) {
-            biomebasetemp = getPrivateFieldNoFail(biomebase, new String[] { "B" }, float.class);
-            if (biomebasetemp != null) {
-                biomebasehumi = getPrivateField(biomebase, new String[] { "C" }, float.class);
-            }
-            else {
-                biomebasetemp = getPrivateField(biomebase, new String[] { "temperature", "F", "C", "aO" }, float.class);
-                biomebasehumi = getPrivateField(biomebase, new String[] { "humidity", "G", "D", "aP" }, float.class);
-            }
-        }
-        else {
-            biomebasehumifunc = getMethod(biomebase, new String[] { "getHumidity" }, nulltypes);
-        }
-        biomebaseidstring = getPrivateField(biomebase, new String[] { "y", "af", "ah", "z", "aS", "aR", "f" }, String.class);
-        biomebaseid = getFieldNoFail(biomebase, new String[] { "id" }, int.class);
-        if (biomebaseid == null) {
-            getidbybiome = getMethod(biomebase, new String[] { "a" }, new Class[] { biomebase } );
+        if (isBiomeBaseListNeeded()) {
+        	biomebase = getNMSClass("net.minecraft.server.BiomeBase");
+        	biomebasearray =  getNMSClass("[Lnet.minecraft.server.BiomeBase;");
+        	biomebaselist = getPrivateFieldNoFail(biomebase, new String[] { "biomes" }, biomebasearray);
+        	if (biomebaselist == null) {
+        		getbiomefunc = getMethodNoFail(biomebase, new String[] { "getBiome" }, new Class[] { int.class, biomebase });
+        		if (getbiomefunc == null) {
+        			getbiomebyid = getMethod(biomebase, new String[] { "a" }, new Class[] { int.class} );
+        		}
+        	}
+        	biomebasetempfunc = getMethodNoFail(biomebase, new String[] { "getTemperature" }, nulltypes);
+        	if (biomebasetempfunc == null) {
+        		biomebasetemp = getPrivateFieldNoFail(biomebase, new String[] { "B" }, float.class);
+        		if (biomebasetemp != null) {
+        			biomebasehumi = getPrivateField(biomebase, new String[] { "C" }, float.class);
+        		}
+        		else {
+        			biomebasetemp = getPrivateField(biomebase, new String[] { "temperature", "F", "C", "aO" }, float.class);
+        			biomebasehumi = getPrivateField(biomebase, new String[] { "humidity", "G", "D", "aP" }, float.class);
+        		}
+        	}
+        	else {
+        		biomebasehumifunc = getMethod(biomebase, new String[] { "getHumidity" }, nulltypes);
+        	}
+        	biomebaseidstring = getPrivateField(biomebase, new String[] { "y", "af", "ah", "z", "aS", "aR", "f" }, String.class);
+        	biomebaseid = getFieldNoFail(biomebase, new String[] { "id" }, int.class);
+        	if (biomebaseid == null) {
+        		getidbybiome = getMethod(biomebase, new String[] { "a" }, new Class[] { biomebase } );
+        	}
         }
         /* n.m.s.World */
         nmsworld = getNMSClass("net.minecraft.server.WorldServer");
@@ -289,6 +279,11 @@ public class BukkitVersionHelperCB extends BukkitVersionHelperGeneric {
         }
         return names;
     }
+    
+    protected boolean isBlockMaterialNeeded() {
+    	return true;
+    }
+
     /**
      * Get material map by block ID
      */

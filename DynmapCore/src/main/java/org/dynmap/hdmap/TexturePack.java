@@ -1598,7 +1598,7 @@ public class TexturePack {
         // Check mods to see if texture files defined there
         for (String modid : core.getServer().getModList()) {
             File f = core.getServer().getModContainerFile(modid);   // Get mod file
-            if (f.isFile()) {
+            if ((f != null) && f.isFile()) {
                 ZipFile zf = null;
                 in = null;
                 try {
@@ -1718,11 +1718,11 @@ public class TexturePack {
                     }
                 }
                 if (blank) {
-                    missing += blk.blockName;
+                    missing += blk.blockName + "\n";
                 }
             }
             if (missing.length() > 0) {
-                Log.warning("Blocks missing texture definition: " + missing);
+                Log.warning("Blocks missing texture definition:\n" + missing);
             }
         }
     }

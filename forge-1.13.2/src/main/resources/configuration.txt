@@ -127,6 +127,7 @@ components:
     spawnbedformat: "%name%'s bed"
     # (optional) Show world border (vanilla 1.8+)
     showworldborder: true
+    worldborderlabel: "Border"
     
   - class: org.dynmap.ClientComponent
     type: chat
@@ -174,6 +175,7 @@ components:
     label: "Location"
     hidey: false
     show-mcr: false
+    show-chunk: false
     
   # Note: more than one logo component can be defined
   #- class: org.dynmap.ClientComponent
@@ -246,16 +248,23 @@ smooth-lighting: true
 #   false=classic Dynmap lighting curve
 use-brightness-table: true
 
-# Optional - render specific block IDs using the texures and models of another block ID: can be used to hide/disguise specific
+# Optional - render specific block names using the textures and models of another block name: can be used to hide/disguise specific
 #  blocks (e.g. make ores look like stone, hide chests) or to provide simple support for rendering unsupported custom blocks
-block-id-alias:
-#    "14": 1
-#    "15": 1
-#    "16": 1
+block-alias:
+#    "minecraft:quartz_ore": "stone"
+#    "diamond_ore": "coal_ore"
 
-# Default image format for HDMaps (png, jpg, jpg-q75, jpg-q80, jpg-q85, jpg-q90, jpg-q95, jpg-q100)
+# Default image format for HDMaps (png, jpg, jpg-q75, jpg-q80, jpg-q85, jpg-q90, jpg-q95, jpg-q100, webp, webp-q75, webp-q80, webp-q85, webp-q90, webp-q95, webp-q100, wepb-l),
+# Note: any webp format requires the presence of the 'webp command line tools' (cwebp, dwebp) (https://developers.google.com/speed/webp/download)
+#
 # Has no effect on maps with explicit format settings
-image-format: png
+image-format: jpg-q90
+
+# If cwebp or dwebp are not on the PATH, use these settings to provide their full path.  Do not use these settings if the tools are on the PATH
+# For Windows, include .exe
+#
+#cwebpPath: /usr/bin/cwebp
+#dwebpPath: /usr/bin/dwebp
 
 #  use-generated-textures: if true, use generated textures (same as client); false is static water/lava textures
 #  correct-water-lighting: if true, use corrected water lighting (same as client); false is legacy water (darker)
@@ -429,6 +438,21 @@ url:
 snapshotcachesize: 500
 # Snapshot cache uses soft references (true), else weak references (false)
 soft-ref-cache: true
+
+# Player enter/exit title messages for map markers
+#
+# Processing period - how often to check player positions vs markers - default is 1000ms (1 second)
+#enterexitperiod: 1000
+# Title message fade in time, in ticks (0.05 second intervals) - default is 10 (1/2 second)
+#titleFadeIn: 10
+# Title message stay time, in ticks (0.05 second intervals) - default is 70 (3.5 seconds)
+#titleStay: 70
+# Title message fade out time, in ticks (0.05 seocnd intervals) - default is 20 (1 second)
+#titleFadeOut: 20
+# Enter/exit messages use on screen titles (true - default), if false chat messages are sent instead
+#enterexitUseTitle: true
+# Set true if new enter messages should supercede pending exit messages (vs being queued in order), default false
+#enterReplacesExits: true
     
 # Set to true to enable verbose startup messages - can help with debugging map configuration problems
 # Set to false for a much quieter startup log

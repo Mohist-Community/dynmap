@@ -308,9 +308,14 @@ public class PostgreSQLMapStorage extends MapStorage {
         return writeConfigPHP(core);
     }
     private boolean writeConfigPHP(DynmapCore core) {
+    	File cfgfile = new File(baseStandaloneDir, "PostgreSQL_config.php");
+    	if (!core.isInternalWebServerDisabled) {	// If using internal server
+    		cfgfile.delete();	// Zap file (in case we left junk from last time)
+    		return true;
+    	}
         FileWriter fw = null;
         try {
-            fw = new FileWriter(new File(baseStandaloneDir, "PostgreSQL_config.php"));
+            fw = new FileWriter(cfgfile);
             fw.write("<?php\n$dbname = \'");
             fw.write(WebAuthManager.esc(database));
             fw.write("\';\n");
@@ -456,7 +461,7 @@ public class PostgreSQLMapStorage extends MapStorage {
                 doUpdate(c, "CREATE TABLE " + tableFaces + " (PlayerName VARCHAR(64) NOT NULL, TypeID INT NOT NULL, Image BYTEA, PRIMARY KEY(PlayerName, TypeID))");
                 doUpdate(c, "CREATE TABLE " + tableMarkerIcons + " (IconName VARCHAR(128) PRIMARY KEY NOT NULL, Image BYTEA)");
                 doUpdate(c, "CREATE TABLE " + tableMarkerFiles + " (FileName VARCHAR(128) PRIMARY KEY NOT NULL, Content BYTEA)");
-                doUpdate(c, "CREATE TABLE " + tableStandaloneFiles + " (FileName VARCHAR(128) NOT NULL, ServerID BIGINT NOT NULL DEFAULT 0, Content TEXT, PRIMARY KEY (FileName, ServerID))");
+                doUpdate(c, "CREATE TABLE " + tableStandaloneFiles + " (FileName VARCHAR(128) NOT NULL, ServerID BIGINT NOT NULL DEFAULT 0, Content BYTEA, PRIMARY KEY (FileName, ServerID))");
                 doUpdate(c, "CREATE TABLE " + tableSchemaVersion + " (level INT PRIMARY KEY NOT NULL)");
                 doUpdate(c, "INSERT INTO " + tableSchemaVersion + " (level) VALUES (3)");
             } catch (SQLException x) {
@@ -488,7 +493,7 @@ public class PostgreSQLMapStorage extends MapStorage {
                 c = getConnection();
                 doUpdate(c, "DELETE FROM " + tableStandaloneFiles + ";");
                 doUpdate(c, "ALTER TABLE " + tableStandaloneFiles + " DROP COLUMN Content;");
-                doUpdate(c, "ALTER TABLE " + tableStandaloneFiles + " ADD COLUMN Content TEXT;");
+                doUpdate(c, "ALTER TABLE " + tableStandaloneFiles + " ADD COLUMN Content BYTEA;");
                 doUpdate(c, "UPDATE " + tableSchemaVersion + " SET level=3 WHERE level = 2;");
             } catch (SQLException x) {
                 Log.severe("Error creating tables - " + x.getMessage());
@@ -957,26 +962,31 @@ public class PostgreSQLMapStorage extends MapStorage {
     }
 
     @Override
+    // External web server only
     public String getMarkersURI(boolean login_enabled) {
         return "standalone/PostgreSQL_markers.php?marker=";
    }
 
     @Override
+    // External web server only
     public String getTilesURI(boolean login_enabled) {
         return "standalone/PostgreSQL_tiles.php?tile=";
     }
 
     @Override
+    // External web server only
     public String getConfigurationJSONURI(boolean login_enabled) {
         return "standalone/PostgreSQL_configuration.php"; // ?serverid={serverid}";
     }
     
     @Override
+    // External web server only
     public String getUpdateJSONURI(boolean login_enabled) {
         return "standalone/PostgreSQL_update.php?world={world}&ts={timestamp}"; // &serverid={serverid}";
     }
 
     @Override
+    // External web server only
     public String getSendMessageURI() {
         return "standalone/PostgreSQL_sendmessage.php";
     }
@@ -1067,10 +1077,12 @@ public class PostgreSQLMapStorage extends MapStorage {
         return false;
     }
     @Override
+    // External web server only
     public String getStandaloneLoginURI() {
         return "standalone/PostgreSQL_login.php";
     }
     @Override
+    // External web server only
     public String getStandaloneRegisterURI() {
         return "standalone/PostgreSQL_register.php";
     }

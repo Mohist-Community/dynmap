@@ -21,6 +21,7 @@ import org.dynmap.utils.VisibilityLimit;
 import net.minecraft.server.v1_14_R1.Chunk;
 import net.minecraft.server.v1_14_R1.ChunkCoordIntPair;
 import net.minecraft.server.v1_14_R1.ChunkRegionLoader;
+import net.minecraft.server.v1_14_R1.ChunkStatus;
 import net.minecraft.server.v1_14_R1.DataBits;
 import net.minecraft.server.v1_14_R1.NBTTagCompound;
 import net.minecraft.server.v1_14_R1.NBTTagList;
@@ -85,7 +86,7 @@ public class MapChunkCache114_1 extends AbstractMapChunkCache {
 	        public StdSection() {
 	            states = new DynmapBlockState[BLOCKS_PER_SECTION];
 	            Arrays.fill(states,  DynmapBlockState.AIR);
-	            skylight = emptyData;
+	            skylight = fullData;
 	            emitlight = emptyData;
 	        }
 	        @Override
@@ -123,10 +124,10 @@ public class MapChunkCache114_1 extends AbstractMapChunkCache {
 	        this.biomebase = new Object[COLUMNS_PER_CHUNK];
 	        this.sectionCnt = worldheight / 16;
 	        /* Allocate arrays indexed by section */
-	        this.section = new Section[this.sectionCnt];
+	        this.section = new Section[this.sectionCnt+1];
 
 	        /* Fill with empty data */
-	        for (int i = 0; i < this.sectionCnt; i++) {
+	        for (int i = 0; i <= this.sectionCnt; i++) {
 	            this.section[i] = empty_section;
 	        }
 
@@ -149,9 +150,9 @@ public class MapChunkCache114_1 extends AbstractMapChunkCache {
 	            this.inhabitedTicks = 0;
 	        }
 	        /* Allocate arrays indexed by section */
-	        this.section = new Section[this.sectionCnt];
+	        this.section = new Section[this.sectionCnt+1];
 	        /* Fill with empty data */
-	        for (int i = 0; i < this.sectionCnt; i++) {
+	        for (int i = 0; i <= this.sectionCnt; i++) {
 	            this.section[i] = empty_section;
 	        }
 	        /* Get sections */
@@ -301,7 +302,8 @@ public class MapChunkCache114_1 extends AbstractMapChunkCache {
             nbt = nbt.getCompound("Level");
             if (nbt != null) {
                 String stat = nbt.getString("Status");
-                if ((stat == null) || (stat.equals("full") == false)) {
+				ChunkStatus cs = ChunkStatus.a(stat);
+                if ((stat == null) || (!cs.b(ChunkStatus.LIGHT))) {
                     nbt = null;
                 }
             }

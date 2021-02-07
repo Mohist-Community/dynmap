@@ -41,6 +41,8 @@ import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.network.NetHandlerPlayServer;
 import net.minecraft.network.NetworkManager;
+import net.minecraft.network.play.server.SPacketTimeUpdate;
+import net.minecraft.network.play.server.SPacketTitle;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.UserListBans;
 import net.minecraft.server.management.UserListIPBans;
@@ -100,6 +102,7 @@ import org.dynmap.forge_1_12_2.DynmapMod;
 import org.dynmap.forge_1_12_2.permissions.FilePermissions;
 import org.dynmap.forge_1_12_2.permissions.OpPermissions;
 import org.dynmap.forge_1_12_2.permissions.PermissionProvider;
+import org.dynmap.forge_1_12_2.permissions.Sponge7Permissions;
 import org.dynmap.permissions.PermissionsHandler;
 import org.dynmap.renderer.DynmapBlockState;
 import org.dynmap.utils.DynIntHashMap;
@@ -1356,6 +1359,27 @@ public class DynmapPlugin
         public UUID getUUID() {
         	return uuid;
         }
+        /**
+         * Send title and subtitle text (called from server thread)
+         */
+        @Override
+        public void sendTitleText(String title, String subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {
+        	if (player instanceof EntityPlayerMP) {
+        		EntityPlayerMP mp = (EntityPlayerMP) player;
+        		SPacketTitle times = new SPacketTitle(fadeInTicks, stayTicks, fadeOutTicks);
+        		mp.connection.sendPacket(times);
+                if (title != null) {
+            		SPacketTitle titlepkt = new SPacketTitle(SPacketTitle.Type.TITLE, new TextComponentString(title));
+            		mp.connection.sendPacket(titlepkt);
+                }
+
+                if (subtitle != null) {
+            		SPacketTitle subtitlepkt = new SPacketTitle(SPacketTitle.Type.SUBTITLE, new TextComponentString(subtitle));
+            		mp.connection.sendPacket(subtitlepkt);
+                }
+        	}
+    	}
+
     }
     /* Handler for generic console command sender */
     public class ForgeCommandSender implements DynmapCommandSender
@@ -1451,7 +1475,10 @@ public class DynmapPlugin
         /* Set up player login/quit event handler */
         registerPlayerLoginListener();
         /* Initialize permissions handler */
-        permissions = FilePermissions.create();
+    	permissions = FilePermissions.create();
+        if (permissions == null) {
+            permissions = Sponge7Permissions.create();
+        }
         if(permissions == null) {
             permissions = new OpPermissions(new String[] { "webchat", "marker.icons", "marker.list", "webregister", "stats", "hide.self", "show.self" });
         }
@@ -1483,6 +1510,10 @@ public class DynmapPlugin
         {
         	return;
         }
+        // Extract default permission example, if needed
+        File filepermexample = new File(core.getDataFolder(), "permissions.yml.example");
+        core.createDefaultFileFromResource("/permissions.yml.example", filepermexample);
+
         DynmapCommonAPIListener.apiInitialized(core);
     }
     
@@ -1658,6 +1689,7 @@ public class DynmapPlugin
 			World w = event.getWorld();
 			if(!(w instanceof WorldServer)) return;
             final ForgeWorld fw = getWorld(w);
+			if (fw == null) return;
             // This event can be called from off server thread, so push processing there
             core.getServer().scheduleServerTask(new Runnable() {
             	public void run() {

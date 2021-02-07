@@ -30,10 +30,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.dynmap.MapType.ImageEncoding;
 import org.dynmap.common.DynmapCommandSender;
 import org.dynmap.common.DynmapListenerManager;
 import org.dynmap.common.DynmapListenerManager.EventType;
@@ -60,6 +60,7 @@ import org.dynmap.utils.BlockStep;
 import org.dynmap.utils.ImageIOManager;
 import org.dynmap.web.BanIPFilter;
 import org.dynmap.web.CustomHeaderFilter;
+import org.dynmap.web.FileNameFilter;
 import org.dynmap.web.FilterHandler;
 import org.dynmap.web.HandlerRouter;
 import org.eclipse.jetty.server.Connector;
@@ -104,6 +105,7 @@ public class DynmapCore implements DynmapCommonAPI {
     public ComponentManager componentManager = new ComponentManager();
     public DynmapListenerManager listenerManager = new DynmapListenerManager(this);
     public PlayerFaces playerfacemgr;
+    public SkinUrlProvider skinUrlProvider;
     public Events events = new Events();
     public String deftemplatesuffix = "";
     private DynmapMapCommands dmapcmds = new DynmapMapCommands();
@@ -122,6 +124,7 @@ public class DynmapCore implements DynmapCommonAPI {
     private int perTickLimit = 50;   // 50 ms
     private boolean dumpMissing = false;
     private static boolean migrate_chunks = false;
+    public boolean isInternalWebServerDisabled = false;
         
     private int     config_hashcode;    /* Used to signal need to reload web configuration (world changes, config update, etc) */
     private int fullrenderplayerlimit;  /* Number of online players that will cause fullrender processing to pause */
@@ -138,6 +141,12 @@ public class DynmapCore implements DynmapCommonAPI {
     
     private boolean loginRequired;
     
+    // WEBP support
+    private String cwebpPath;
+    private String dwebpPath;
+    private boolean did_cwebpPath_warn = false;
+    private boolean did_dwebpPath_warn = false;
+    
     /* Flag to let code know that we're doing reload - make sure we don't double-register event handlers */
     public boolean is_reload = false;
     public static boolean ignore_chunk_loads = false; /* Flag keep us from processing our own chunk loads */
@@ -152,8 +161,15 @@ public class DynmapCore implements DynmapCommonAPI {
     
     private String[] deftriggers = { };
 
+    private Boolean webserverCompConfigWarn = false;
+    private final String CompConfigWiki = "https://github.com/webbukkit/dynmap/wiki/Component-Configuration";
+
     /* Constructor for core */
     public DynmapCore() {
+    }
+
+    public void setSkinUrlProvider(SkinUrlProvider skinUrlProvider) {
+        this.skinUrlProvider = skinUrlProvider;
     }
     
     /* Cleanup method */
@@ -196,7 +212,6 @@ public class DynmapCore implements DynmapCommonAPI {
     public void setMinecraftVersion(String mcver) {
         this.platformVersion = mcver;
     }
-    
     public void setServer(DynmapServerInterface srv) {
         server = srv;
     }
@@ -208,6 +223,21 @@ public class DynmapCore implements DynmapCommonAPI {
     
     public static final boolean migrateChunks() {
         return migrate_chunks;
+    }
+    
+    public String getCWEBPPath() {
+    	if ((cwebpPath == null) && (!did_cwebpPath_warn)) {
+    		Log.severe("ERROR: trying to use WEBP without cwebp tool installed or cwebpPath set properly");
+    		did_cwebpPath_warn = true;    		
+    	}
+    	return cwebpPath;
+    }
+    public String getDWEBPPath() {
+    	if ((dwebpPath == null) && (!did_dwebpPath_warn)) {
+    		Log.severe("ERROR: trying to use WEBP without dwebp tool installed or dwebpPath set properly");
+    		did_dwebpPath_warn = true;    		
+    	}
+    	return dwebpPath;
     }
 
     public final String getBiomeName(int biomeid) {
@@ -365,6 +395,9 @@ public class DynmapCore implements DynmapCommonAPI {
         configuration = new ConfigurationNode(f);
         configuration.load();
 
+        // Check if we are disabling the internal web server (implies external)
+        isInternalWebServerDisabled = configuration.getBoolean("disable-webserver", false);
+
         /* Prime the tiles directory */
         tilesDirectory = getFile(configuration.getString("tilespath", "web/tiles"));
         if (!tilesDirectory.isDirectory() && !tilesDirectory.mkdirs()) {
@@ -412,6 +445,25 @@ public class DynmapCore implements DynmapCommonAPI {
         return true;
     }
 
+    private String findExecutableOnPath(String fname) {
+        String path = System.getenv("PATH");
+        // Fast-fail if path is null.
+        if (path == null)
+            return null;
+
+		for (String dirname : path.split(File.pathSeparator)) {
+			File file = new File(dirname, fname);
+			if (file.isFile() && file.canExecute()) {
+				return file.getAbsolutePath();
+			}
+			file = new File(dirname, fname + ".exe");
+			if (file.isFile() && file.canExecute()) {
+				return file.getAbsolutePath();
+			}
+		}
+		return null;
+    }
+    
     public boolean enableCore(EnableCoreCallbacks cb) {
         /* Update extracted files, if needed */
         updateExtractedFiles();
@@ -423,13 +475,45 @@ public class DynmapCore implements DynmapCommonAPI {
 
         /* Load control for leaf transparency (spout lighting bug workaround) */
         transparentLeaves = configuration.getBoolean("transparent-leaves", true);
+        
+        // Inject core instance
+        ImageIOManager.core = this;
+        // Check for webp support
+    	cwebpPath = configuration.getString("cwebpPath", null);
+    	dwebpPath = configuration.getString("dwebpPath", null);
+    	if (cwebpPath == null) {
+    		cwebpPath = findExecutableOnPath("cwebp");
+    	}
+    	if (dwebpPath == null) {
+    		dwebpPath = findExecutableOnPath("dwebp");
+    	}
+    	if (cwebpPath != null) {
+        	File file = new File(cwebpPath);
+    		if (!file.isFile() || !file.canExecute()) {
+    			cwebpPath = null;
+    		}
+    	}
+    	if (dwebpPath != null) {
+        	File file = new File(dwebpPath);
+    		if (!file.isFile() || !file.canExecute()) {
+    			dwebpPath = null;
+    		}
+    	}
+        if ((cwebpPath != null) && (dwebpPath != null)) {
+        	Log.info("Found cwebp at " + cwebpPath + " and dwebp at " + dwebpPath + ": webp format enabled");
+        }
+        else {
+        	cwebpPath = dwebpPath = null;
+        }
         /* Get default image format */
         def_image_format = configuration.getString("image-format", "png");
         MapType.ImageFormat fmt = MapType.ImageFormat.fromID(def_image_format);
-        if(fmt == null) {
+        if ((fmt == null) || ((fmt.enc == ImageEncoding.WEBP) && (cwebpPath == null))) {
             Log.severe("Invalid image-format: " + def_image_format);
             def_image_format = "png";
+            fmt = MapType.ImageFormat.fromID(def_image_format);
         }
+        
         
         DynmapWorld.doInitialScan(configuration.getBoolean("initial-zoomout-validate", true));
         
@@ -504,13 +588,20 @@ public class DynmapCore implements DynmapCommonAPI {
         mapManager = new MapManager(this, configuration);
         mapManager.startRendering();
 
+        if (markerapi != null) {
+        	MarkerAPIImpl.completeInitializeMarkerAPI(markerapi);
+        }
+        
         playerfacemgr = new PlayerFaces(this);
         
         updateConfigHashcode(); /* Initialize/update config hashcode */
         
         loginRequired = configuration.getBoolean("login-required", false);
             
-        loadWebserver();
+        // If not disabled, load and initialize the internal web server
+        if (!isInternalWebServerDisabled) {
+        	loadWebserver();
+        }
 
         enabledTriggers.clear();
         List<String> triggers = configuration.getStrings("render-triggers", new ArrayList<String>());
@@ -532,8 +623,29 @@ public class DynmapCore implements DynmapCommonAPI {
         }
         Log.verboseinfo("Loaded " + componentManager.components.size() + " components.");
 
-        if (!configuration.getBoolean("disable-webserver", false)) {
+        if (!isInternalWebServerDisabled) {	// If internal not disabled, we should be using it and not external
             startWebserver();
+            if (!componentManager.isLoaded(InternalClientUpdateComponent.class)) {
+                Log.warning("Using internal server, but " + InternalClientUpdateComponent.class.toString() + " is DISABLED!");
+                webserverCompConfigWarn = true;
+            }
+            if (componentManager.isLoaded(JsonFileClientUpdateComponent.class)) {
+                Log.warning("Using internal server, but " + JsonFileClientUpdateComponent.class.toString() + " is ENABLED!");
+            }
+        }
+        else {
+            if (componentManager.isLoaded(InternalClientUpdateComponent.class)) {
+                Log.warning("Using external server, but " + InternalClientUpdateComponent.class.toString() + " is ENABLED!");
+            }
+            if (!componentManager.isLoaded(JsonFileClientUpdateComponent.class)) {
+                Log.warning("Using external server, but " + JsonFileClientUpdateComponent.class.toString() + " is DISABLED!");
+                webserverCompConfigWarn = true;
+            }
+        }
+        if (webserverCompConfigWarn) {
+            Log.warning("If the website is missing files or not loading/updating, this might be why.");
+            Log.warning("For more info, read this: " + CompConfigWiki);
+            webserverCompConfigWarn = false;
         }
         
         /* Add login/logoff listeners */
@@ -552,8 +664,9 @@ public class DynmapCore implements DynmapCommonAPI {
         
         /* Print version info */
         Log.info("version " + plugin_ver + " is enabled - core version " + version );
-        Log.info("For support, visit https://forums.dynmap.us");
+        Log.info("For support, visit https://reddit.com/r/Dynmap or our Discord at https://discord.gg/s3rd5qn");
         Log.info("To report or track bugs, visit https://github.com/webbukkit/dynmap/issues");
+        Log.info("If you'd like to donate, please visit https://www.patreon.com/dynmap or https://ko-fi.com/michaelprimm");
 
         events.<Object>trigger("initialized", null);
                 
@@ -563,7 +676,33 @@ public class DynmapCore implements DynmapCommonAPI {
         //dumpColorMap("dokuhigh.txt", "dokuhigh.zip");
         //dumpColorMap("misa.txt", "misa.zip");
         //dumpColorMap("sphax.txt", "sphax.zip");
-        
+
+        if (configuration.getBoolean("dumpBlockState", false)) {
+        	Log.info("Block State Dump");
+        	Log.info("----------------");
+        	for (int i = 0; i < DynmapBlockState.getGlobalIndexMax(); i++) {
+        		DynmapBlockState bs = DynmapBlockState.getStateByGlobalIndex(i);
+        		if (bs != null) {
+        			Log.info(String.format("%d: %s", i, bs.toString()));
+        		}
+        	}
+        	Log.info("----------------");
+        }
+        if (configuration.getBoolean("dumpBlockNames", false)) {
+        	Log.info("Block Name dump");
+        	Log.info("---------------");
+        	for (int i = 0; i < DynmapBlockState.getGlobalIndexMax(); ) {
+    			DynmapBlockState bs = DynmapBlockState.getStateByGlobalIndex(i);
+    			if (bs != null) {
+    				Log.info(String.format("%d,%s,%d", i, bs.blockName, bs.getStateCount()));
+    				i += bs.getStateCount();
+    			}
+    			else {
+    				i++;
+    			}
+        	}
+        	Log.info("---------------");
+        }
         return true;
     }
     
@@ -834,6 +973,8 @@ public class DynmapCore implements DynmapCommonAPI {
         if (checkbannedips) {
             filters.add(new BanIPFilter(this));
         }
+        filters.add(new FileNameFilter(this));
+        
 //        filters.add(new LoginFilter(this));
         
         /* Load customized response headers, if any */
@@ -1155,6 +1296,12 @@ public class DynmapCore implements DynmapCommonAPI {
         new CommandInfo("dmap", "mapset", "<world>:<map> <attrib>:<value> <attrib>:<value>", "Update map <map> of world <world> with new attribute values."),
         new CommandInfo("dmap", "worldreset", "<world>", "Reset world <world> to default template for world type"),
         new CommandInfo("dmap", "worldreset", "<world> <templatename>", "Reset world <world> to temaplte <templatename>."),
+        new CommandInfo("dmap", "worldgetlimits", "<world>", "List visibity and hidden limits for world"),
+        new CommandInfo("dmap", "worldaddlimit", "<world> corner1:<x>/<z> corner2:<x>/<z>", "Add rectangular visibilty limit"),
+        new CommandInfo("dmap", "worldaddlimit", "<world> type:round center:<x>/<z> radius:<radius>", "Add round visibilty limit"),
+        new CommandInfo("dmap", "worldaddlimit", "<world> limittype:hidden corner1:<x>/<z> corner2:<x>/<z>", "Add rectangular hidden limit"),
+        new CommandInfo("dmap", "worldaddlimit", "<world> limittype:hidden hitype:round center:<x>/<z> radius:<radius>", "Add round hidden limit"),
+        new CommandInfo("dmap", "worldremovelimit", "<world> <limit-index>", "Remove world limit with index limit-index"),        
         new CommandInfo("dynmapexp", "", "Set and execute exports in OBJ format."),
         new CommandInfo("dynmapexp", "set", "<attrib> <value> ...", "Set bounds attributes for OBJ export."),
         new CommandInfo("dynmapexp", "reset", "Reset all bounds for OBJ export."),
@@ -2288,8 +2435,9 @@ public class DynmapCore implements DynmapCommonAPI {
         else {  // First time, delete old external texture pack
             deleteDirectory(new File(df, "texturepacks/standard"));
         }
+        String curver = this.getDynmapCoreVersion();
         /* If matched, we're good */
-        if (prevver.equals(this.getDynmapCoreVersion())) {
+        if (prevver.equals(curver) && (!curver.endsWith(("-Dev")))) {
             return;
         }
         /* Get deleted file list */

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +33,9 @@ import org.dynmap.common.DynmapListenerManager.EventType;
 import org.dynmap.debug.Debug;
 import org.dynmap.exporter.OBJExport;
 import org.dynmap.hdmap.HDMapManager;
+import org.dynmap.markers.EnterExitMarker;
+import org.dynmap.markers.EnterExitMarker.EnterExitText;
+import org.dynmap.markers.impl.MarkerAPIImpl;
 import org.dynmap.renderer.DynmapBlockState;
 import org.dynmap.storage.MapStorage;
 import org.dynmap.storage.MapStorageBaseTileEnumCB;
@@ -72,6 +76,33 @@ public class MapManager {
     private boolean tpspauseupdaterenders = false;
     private boolean tpspausefullrenders = false;
     private boolean tpspausezoomout = false;
+
+    // User enter/exit processing
+    private static final int DEFAULT_ENTEREXIT_PERIOD = 1000;	// 1 second
+    private static final int DEFAULT_TITLE_FADEIN = 10;	// 10 ticks = 1/2 second
+    private static final int DEFAULT_TITLE_STAY = 70;	// 70 ticks = 3 1/2 second
+    private static final int DEFAULT_TITLE_FADEOUT = 20;	// 20 ticks = 1 second    
+    private static final boolean DEFAULT_ENTEREXIT_USETITLE = true;
+    private static final boolean DEFAULT_ENTEREPLACESEXITS = false;
+    private int enterexitperiod = DEFAULT_ENTEREXIT_PERIOD;	// Enter/exit processing period
+    private int titleFadeIn = DEFAULT_TITLE_FADEIN;
+    private int titleStay = DEFAULT_TITLE_STAY;
+    private int titleFadeOut = DEFAULT_TITLE_FADEOUT;
+    private boolean enterexitUseTitle = DEFAULT_ENTEREXIT_USETITLE;
+    private boolean enterReplacesExits = DEFAULT_ENTEREPLACESEXITS;
+    
+    private HashMap<UUID, HashSet<EnterExitMarker>> entersetstate = new HashMap<UUID, HashSet<EnterExitMarker>>();
+    
+    private static class TextQueueRec {
+    	EnterExitText txt;
+    	boolean isEnter;
+    }
+    private static class SendQueueRec {
+    	DynmapPlayer player;
+    	ArrayList<TextQueueRec> queue = new ArrayList<TextQueueRec>();
+    	int tickdelay;    	
+    };    
+    private HashMap<UUID, SendQueueRec> entersetsendqueue = new HashMap<UUID, SendQueueRec>();
 
     private boolean did_start = false;
     
@@ -931,6 +962,101 @@ public class MapManager {
         }
     }
     
+    private void sendPlayerEnterExit(DynmapPlayer player, EnterExitText txt) {
+		core.getServer().scheduleServerTask(new Runnable() {
+			public void run() {
+				if (enterexitUseTitle) {
+					player.sendTitleText(txt.title, txt.subtitle, titleFadeIn, titleStay, titleFadeOut);
+				}
+				else {
+					if (txt.title != null) player.sendMessage(txt.title);
+					if (txt.subtitle != null) player.sendMessage(txt.subtitle);
+				}
+			}
+		}, 0);    	
+    }
+    
+    private void enqueueMessage(UUID uuid, DynmapPlayer player, EnterExitText txt, boolean isEnter) {
+    	SendQueueRec rec = entersetsendqueue.get(uuid);
+    	if (rec == null) {
+    		rec = new SendQueueRec();
+    		rec.player = player;
+    		rec.tickdelay = 0;
+    		entersetsendqueue.put(uuid, rec);
+    	}
+    	TextQueueRec txtrec = new TextQueueRec();
+    	txtrec.isEnter = isEnter;
+    	txtrec.txt = txt;
+    	rec.queue.add(txtrec);
+    	// If enter replaces exits, and we just added enter, purge exits
+    	if (enterReplacesExits && isEnter) {
+    		ArrayList<TextQueueRec> newlst = new ArrayList<TextQueueRec>();
+    		for (TextQueueRec r : rec.queue) {
+    			if (r.isEnter) newlst.add(r);	// Keep the enter records
+    		}
+    		rec.queue = newlst;
+    	}
+    }
+    
+    private class DoUserMoveProcessing implements Runnable {
+        public void run() {
+            HashMap<UUID, HashSet<EnterExitMarker>> newstate = new HashMap<UUID, HashSet<EnterExitMarker>>();
+        	DynmapPlayer[] pl = core.playerList.getOnlinePlayers();
+        	for (DynmapPlayer player : pl) {
+        		if (player == null) continue;
+        		UUID puuid = player.getUUID();
+        		HashSet<EnterExitMarker> newset = new HashSet<EnterExitMarker>();
+        		DynmapLocation dl = player.getLocation();
+        		if (dl != null) {
+        			MarkerAPIImpl.getEnteredMarkers(dl.world, dl.x, dl.y, dl.z, newset);
+        		}
+        		HashSet<EnterExitMarker> oldset = entersetstate.get(puuid);
+        		// See which we just left
+        		if (oldset != null) {
+            		for (EnterExitMarker m : oldset) {
+            			EnterExitText txt = m.getFarewellText();
+            			if ((txt != null) && (newset.contains(m) == false)) {
+            				enqueueMessage(puuid, player, txt, false);
+            			}
+            		}        			
+        		}
+        		// See which we just entered
+        		for (EnterExitMarker m : newset) {
+        			EnterExitText txt = m.getGreetingText();
+        			if ((txt != null) && ((oldset == null) || (oldset.contains(m) == false))) {
+        				enqueueMessage(puuid, player, txt, true);
+        			}
+        		}
+        		newstate.put(puuid, newset);
+        	}
+        	entersetstate = newstate;	// Replace old with new
+        	
+        	// Go through queues - send pending messages
+        	List<UUID> keys = new ArrayList<UUID>(entersetsendqueue.keySet());
+        	for (UUID id : keys) {
+        		SendQueueRec rec = entersetsendqueue.get(id);
+        		// Check delay - count down if needed
+        		if (rec.tickdelay > enterexitperiod) {
+        			rec.tickdelay -= enterexitperiod;
+        			continue;
+        		}
+        		rec.tickdelay = 0;
+        		// If something to send, send it
+        		if (rec.queue.size() > 0) {
+        			TextQueueRec txt = rec.queue.remove(0);
+        			sendPlayerEnterExit(rec.player, txt.txt);	// And send it
+        			rec.tickdelay = 50 * (titleFadeIn + 10);	// Delay by fade in time plus 1/2 second       			
+        		}
+        		else {	// Else, if we are empty and exhausted delay, remove it
+        			entersetsendqueue.remove(id);
+        		}
+        	}			
+        	if (enterexitperiod > 0) {
+        		scheduleDelayedJob(this, enterexitperiod);
+        	}
+        }
+    }
+
     private void addNextTilesToUpdate(int cnt) {
         ArrayList<MapTile> tiles = new ArrayList<MapTile>();
         TileFlags.TileCoord coord = new TileFlags.TileCoord();
@@ -1012,6 +1138,13 @@ public class MapManager {
         if (tpslimit_fullrenders > 19.5) tpslimit_fullrenders = 19.5;
         tpslimit_zoomout = configuration.getDouble("zoomout-min-tps", 18.0);
         if (tpslimit_zoomout > 19.5) tpslimit_zoomout = 19.5;
+        // Load enter/exit processing settings
+        enterexitperiod = configuration.getInteger("enterexitperiod", DEFAULT_ENTEREXIT_PERIOD);
+        titleFadeIn = configuration.getInteger("titleFadeIn", DEFAULT_TITLE_FADEIN);
+        titleStay = configuration.getInteger("titleStay", DEFAULT_TITLE_STAY);
+        titleFadeOut = configuration.getInteger("titleFadeOut", DEFAULT_TITLE_FADEOUT);
+        enterexitUseTitle = configuration.getBoolean("enterexitUseTitle", DEFAULT_ENTEREXIT_USETITLE);
+        enterReplacesExits = configuration.getBoolean("enterReplacesExits", DEFAULT_ENTEREPLACESEXITS);
         // Load the save pending job period
         savependingperiod = configuration.getInteger("save-pending-period", 900);
         if ((savependingperiod > 0) && (savependingperiod < 60)) savependingperiod = 60;
@@ -1458,6 +1591,11 @@ public class MapManager {
         scheduleDelayedJob(new DoZoomOutProcessing(), 60000);
         scheduleDelayedJob(new CheckWorldTimes(), 5000);
         scheduleDelayedJob(new DoTouchProcessing(), 1000);
+        // If enabled, start enter/exit processing
+        if (enterexitperiod > 0) {
+        	Log.info("Starting enter/exit processing");
+        	scheduleDelayedJob(new DoUserMoveProcessing(), enterexitperiod);
+        }
         /* Resume pending jobs */
         for(FullWorldRenderState job : active_renders.values()) {
             scheduleDelayedJob(job, 5000);

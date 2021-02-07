@@ -565,8 +565,8 @@ block:id=dirt,allfaces=0:dirt,stdrot=true
 # Coarse Dirt
 block:id=coarse_dirt,allfaces=0:coarse_dirt,stdrot=true
 # Pozdol
-block:id=podzol,data=0,allsides=1000:podzol_side,top=0:snow,bottom=0:dirt,stdrot=true
-block:id=podzol,data=1,allsides=1000:podzol_side,top=1000:podzol_top,bottom=0:dirt,stdrot=true
+block:id=podzol,data=0,allsides=0:grass_block_snow,top=0:grass_block_top,bottom=0:dirt,stdrot=true
+block:id=podzol,data=1,allsides=0:podzol_side,top=0:podzol_top,bottom=0:dirt,stdrot=true
 # Cobblestone
 block:id=cobblestone,allfaces=0:cobblestone,stdrot=true
 # Wooden Plank (oak)
@@ -793,30 +793,6 @@ block:id=detector_rail,data=0-5,patch0=0:detector_rail_on,transparency=TRANSPARE
 # Detector rail - unpowered
 block:id=detector_rail,data=6-11,patch0=0:detector_rail,transparency=TRANSPARENT
 
-# Sticky piston - facing down
-block:id=sticky_piston,data=0,top=0:piston_bottom,bottom=0:piston_top_sticky,allsides=5000:piston_side,transparency=TRANSPARENT
-# Sticky piston - facing up
-block:id=sticky_piston,data=1,top=0:piston_top_sticky,bottom=0:piston_bottom,allsides=0:piston_side,transparency=TRANSPARENT
-# Sticky piston - facing east
-block:id=sticky_piston,data=2,east=0:piston_top_sticky,west=0:piston_bottom,top=6000:piston_side,bottom=4000:piston_side,north=4000:piston_side,south=6000:piston_side,transparency=TRANSPARENT
-# Sticky piston - facing west
-block:id=sticky_piston,data=3,west=0:piston_top_sticky,east=0:piston_bottom,top=4000:piston_side,bottom=6000:piston_side,north=6000:piston_side,south=4000:piston_side,transparency=TRANSPARENT
-# Sticky piston - facing north
-block:id=sticky_piston,data=4,north=0:piston_top_sticky,south=0:piston_bottom,top=0:piston_side,bottom=5000:piston_side,east=6000:piston_side,west=4000:piston_side,transparency=TRANSPARENT
-# Sticky piston - facing south
-block:id=sticky_piston,data=5,north=0:piston_bottom,south=0:piston_top_sticky,top=5000:piston_side,bottom=0:piston_side,east=4000:piston_side,west=6000:piston_side,transparency=TRANSPARENT
-# Sticky piston - extended facing down (TODO: side)
-block:id=sticky_piston,data=6,top=0:piston_bottom,bottom=0:piston_inner,allsides=5262,transparency=TRANSPARENT
-# Sticky piston - extended facing up  (TODO: side)
-block:id=sticky_piston,data=7,top=0:piston_inner,bottom=0:piston_bottom,allsides=262,transparency=TRANSPARENT
-# Sticky piston - extended facing east (TODO: side)
-block:id=sticky_piston,data=8,east=0:piston_inner,west=0:piston_bottom,top=6262,bottom=4262,north=4262,south=6262,transparency=TRANSPARENT
-# Sticky piston - extended facing west (TODO: side)
-block:id=sticky_piston,data=9,west=0:piston_inner,east=0:piston_bottom,top=4262,bottom=6262,north=6262,south=4262,transparency=TRANSPARENT
-# Sticky piston - extended facing north (TODO: side)
-block:id=sticky_piston,data=10,north=0:piston_inner,south=0:piston_bottom,top=262,bottom=5262,east=6262,west=4262,transparency=TRANSPARENT
-# Sticky piston - extended facing south (TODO: side)
-block:id=sticky_piston,data=11,north=0:piston_bottom,south=0:piston_inner,top=5262,bottom=262,east=4262,west=6262,transparency=TRANSPARENT
 # Web
 block:id=cobweb,patch0-1=0:cobweb,transparency=TRANSPARENT
 # Grass
@@ -830,54 +806,14 @@ block:id=seagrass,patch0-3=1000:seagrass,transparency=TRANSPARENT
 # Tall seagrass
 block:id=tall_seagrass,data=0,patch0-3=1000:tall_seagrass_top,transparency=TRANSPARENT
 block:id=tall_seagrass,data=1,patch0-3=1000:tall_seagrass_bottom,transparency=TRANSPARENT
-# Piston - facing down
-block:id=piston,data=0,top=0:piston_bottom,bottom=0:piston_top,allsides=5000:piston_side,transparency=TRANSPARENT
-# Piston - facing up
-block:id=piston,data=1,top=0:piston_top,bottom=0:piston_bottom,allsides=0:piston_side,transparency=TRANSPARENT
-# Piston - facing east
-block:id=piston,data=2,east=0:piston_top,west=0:piston_bottom,top=6000:piston_side,bottom=4000:piston_side,north=4000:piston_side,south=6000:piston_side,transparency=TRANSPARENT
-# Piston - facing west
-block:id=piston,data=3,west=0:piston_top,east=0:piston_bottom,top=4000:piston_side,bottom=6000:piston_side,north=6000:piston_side,south=4000:piston_side,transparency=TRANSPARENT
-# Piston - facing north
-block:id=piston,data=4,north=0:piston_top,south=0:piston_bottom,top=0:piston_side,bottom=5000:piston_side,east=6000:piston_side,west=4000:piston_side,transparency=TRANSPARENT
-# Piston - facing south
-block:id=piston,data=5,north=0:piston_bottom,south=0:piston_top,top=5000:piston_side,bottom=0:piston_side,east=4000:piston_side,west=6000:piston_side,transparency=TRANSPARENT
-# Piston - extended facing down (TODO:piston extension side)
-block:id=piston,data=6,top=0:piston_bottom,bottom=0:piston_inner,allsides=5262,transparency=TRANSPARENT
-# Piston - extended facing up (TODO:piston extension side)
-block:id=piston,data=7,top=0:piston_inner,bottom=0:piston_bottom,allsides=262,transparency=TRANSPARENT
-# Piston - extended facing east (TODO:piston extension side)
-block:id=piston,data=8,east=0:piston_inner,west=0:piston_bottom,top=6262,bottom=4262,north=4262,south=6262,transparency=TRANSPARENT
-# Piston - extended facing west (TODO:piston extension side)
-block:id=piston,data=9,west=0:piston_inner,east=0:piston_bottom,top=4262,bottom=6262,north=6262,south=4262,transparency=TRANSPARENT
-# Piston - extended facing north (TODO:piston extension side)
-block:id=piston,data=10,north=0:piston_inner,south=0:piston_bottom,top=262,bottom=5262,east=6262,west=4262,transparency=TRANSPARENT
-# Piston - extended facing south (TODO:piston extension side)
-block:id=piston,data=11,north=0:piston_bottom,south=0:piston_inner,top=5262,bottom=262,east=4262,west=6262,transparency=TRANSPARENT
-# Piston extension- facing down (TODO:piston extension side)
-block:id=piston_head,data=0,top=0:piston_inner,bottom=0:piston_top,allsides=5261,transparency=TRANSPARENT
-# Piston extension - facing up (TODO:piston extension side)
-block:id=piston_head,data=1,top=0:piston_top,bottom=0:piston_inner,allsides=261,transparency=TRANSPARENT
-# Piston extension - facing east (TODO:piston extension side)
-block:id=piston_head,data=2,east=0:piston_top,west=0:piston_inner,top=6261,bottom=4261,north=4261,south=6261,transparency=TRANSPARENT
-# Piston extension - facing west (TODO:piston extension side)
-block:id=piston_head,data=3,west=0:piston_top,east=0:piston_inner,top=4261,bottom=6261,north=6261,south=4261,transparency=TRANSPARENT
-# Piston extension - facing north (TODO:piston extension side)
-block:id=piston_head,data=4,north=0:piston_top,south=0:piston_inner,top=261,bottom=5261,east=6261,west=4261,transparency=TRANSPARENT
-# Piston extension - facing south (TODO:piston extension side)
-block:id=piston_head,data=5,north=0:piston_inner,south=0:piston_top,top=5261,bottom=261,east=4261,west=6261,transparency=TRANSPARENT
-# Sticky piston extension - facing down (TODO:piston extension side)
-block:id=piston_head,data=6,top=0:piston_inner,bottom=0:piston_top_sticky,allsides=5261,transparency=TRANSPARENT
-# Sticky piston extension - facing up (TODO:piston extension side)
-block:id=piston_head,data=7,top=0:piston_top_sticky,bottom=0:piston_inner,allsides=261,transparency=TRANSPARENT
-# Sticky piston extension - facing east (TODO:piston extension side)
-block:id=piston_head,data=8,east=0:piston_top_sticky,west=0:piston_inner,top=6261,bottom=4261,north=4261,south=6261,transparency=TRANSPARENT
-# Sticky piston extension - facing west (TODO:piston extension side)
-block:id=piston_head,data=9,west=0:piston_top_sticky,east=0:piston_inner,top=4261,bottom=6261,north=6261,south=4261,transparency=TRANSPARENT
-# Sticky piston extension - facing north (TODO:piston extension side)
-block:id=piston_head,data=10,north=0:piston_top_sticky,south=0:piston_inner,top=261,bottom=5261,east=6261,west=4261,transparency=TRANSPARENT
-# Sticky piston extension - facing south (TODO:piston extension side)
-block:id=piston_head,data=11,north=0:piston_inner,south=0:piston_top_sticky,top=5261,bottom=261,east=4261,west=6261,transparency=TRANSPARENT
+
+#  Piston
+block:id=piston,patch0=0:piston_bottom,patch1=0:piston_top,patch2=0:piston_side,patch3=0:piston_inner
+# Sticky piston
+block:id=sticky_piston,patch0=0:piston_bottom,patch1=0:piston_top_sticky,patch2=0:piston_side,patch3=0:piston_inner
+# Piston head
+block:id=piston_head,data=0,data=2,data=4,data=6,data=8,data=10,data=12,data=14,data=16,data=18,data=20,data=22,patch0=0:piston_bottom,patch1=0:piston_top,patch2=0:piston_side,patch3=0:piston_inner,transparency=TRANSPARENT
+block:id=piston_head,data=1,data=3,data=5,data=7,data=9,data=11,data=13,data=15,data=17,data=19,data=21,data=23,patch0=0:piston_bottom,patch1=0:piston_top_sticky,patch2=0:piston_side,patch3=0:piston_inner,transparency=TRANSPARENT
 # Moving piston (don't show)
 block:id=moving_piston
 # Wool
@@ -1371,8 +1307,8 @@ block:id=acacia_slab,data=4,data=5,allfaces=0:acacia_planks,stdrot=true
 block:id=dark_oak_slab,data=0,data=1,data=2,data=3,allfaces=0:dark_oak_planks,stdrot=true,transparency=SEMITRANSPARENT
 block:id=dark_oak_slab,data=4,data=5,allfaces=0:dark_oak_planks,stdrot=true
 # Stone slab
-block:id=stone_slab,data=0,data=1,data=2,data=3,allsides=0:stone_slab_side,topbottom=0:stone_slab_top,stdrot=true,transparency=SEMITRANSPARENT
-block:id=stone_slab,data=4,data=5,allsides=0:stone_slab_side,topbottom=0:stone_slab_top,stdrot=true
+block:id=stone_slab,data=0,data=1,data=2,data=3,allsides=0:stone,topbottom=0:stone,stdrot=true,transparency=SEMITRANSPARENT
+block:id=stone_slab,data=4,data=5,allsides=0:stone,topbottom=0:stone,stdrot=true
 # Sandstone slab
 block:id=sandstone_slab,data=0,data=1,data=2,data=3,bottom=0:sandstone_bottom,top=0:sandstone_top,allsides=0:sandstone,stdrot=true,transparency=SEMITRANSPARENT
 block:id=sandstone_slab,data=4,data=5,bottom=0:sandstone_bottom,top=0:sandstone_top,allsides=0:sandstone,stdrot=true
@@ -2430,3 +2366,275 @@ block:id=horn_coral,patch0-1=0:horn_coral,transparency=TRANSPARENT
 [1.15-]block:id=honey_block,patch0=0:honey_block_top,patch1=0:honey_block_bottom,patch2=0:honey_block_side,transparency=TRANSPARENT
 # Honeycomb block
 [1.15-]block:id=honeycomb_block,allfaces=0:honeycomb_block,stdrot=true
+
+# 1.16 blocks
+[1.16-]texture:id=nether_gold_ore
+[1.16-]texture:id=soul_fire_0
+[1.16-]texture:id=soul_fire_1
+[1.16-]texture:id=soul_soil
+[1.16-]texture:id=basalt_side
+[1.16-]texture:id=basalt_top
+[1.16-]texture:id=polished_basalt_side
+[1.16-]texture:id=polished_basalt_top
+[1.16-]texture:id=soul_torch
+[1.16-]texturefile:id=chain,filename=assets/minecraft/textures/block/chain.png,format=CUSTOM,tile0=0:0/3:16/6:0,tile1=3:0/3:16/6:0,xcount=2,ycount=1
+[1.16-]texture:id=soul_campfire_log_lit
+[1.16-]texture:id=soul_campfire_fire
+[1.16-]texturefile:id=soul_lantern,filename=assets/minecraft/textures/block/soul_lantern.png,format=CUSTOM,tile0=0:0/6:10/5:3,xcount=1,ycount=3
+[1.16-]texture:id=warped_stem_top
+[1.16-]texture:id=warped_stem
+[1.16-]texture:id=stripped_warped_stem_top
+[1.16-]texture:id=stripped_warped_stem
+[1.16-]texture:id=warped_nylium
+[1.16-]texture:id=warped_nylium_side
+[1.16-]texture:id=warped_fungus
+[1.16-]texture:id=warped_wart_block
+[1.16-]texture:id=warped_roots
+[1.16-]texture:id=nether_sprouts
+[1.16-]texture:id=crimson_stem_top
+[1.16-]texture:id=crimson_stem
+[1.16-]texture:id=stripped_crimson_stem
+[1.16-]texture:id=stripped_crimson_stem_top
+[1.16-]texture:id=crimson_nylium
+[1.16-]texture:id=crimson_nylium_side
+[1.16-]texture:id=crimson_fungus
+[1.16-]texture:id=crimson_roots
+[1.16-]texture:id=shroomlight
+[1.16-]texture:id=weeping_vines
+[1.16-]texture:id=weeping_vines_plant
+[1.16-]texture:id=twisting_vines
+[1.16-]texture:id=twisting_vines_plant
+[1.16-]texture:id=crimson_planks
+[1.16-]texture:id=warped_planks
+[1.16-]texture:id=warped_trapdoor
+[1.16-]texture:id=crimson_trapdoor
+[1.16-]texture:id=warped_door_top
+[1.16-]texture:id=warped_door_bottom
+[1.16-]texture:id=crimson_door_top
+[1.16-]texture:id=crimson_door_bottom
+[1.16-]texturefile:id=crimson_sign,filename=assets/minecraft/textures/entity/signs/crimson.png,format=SIGN
+[1.16-]texturefile:id=warped_sign,filename=assets/minecraft/textures/entity/signs/warped.png,format=SIGN
+[1.16-]texture:id=target_top
+[1.16-]texture:id=target_side
+[1.16-]texture:id=netherite_block
+[1.16-]texture:id=ancient_debris_top
+[1.16-]texture:id=ancient_debris_side
+[1.16-]texture:id=crying_obsidian
+[1.16-]texture:id=respawn_anchor_top_off
+[1.16-]texture:id=respawn_anchor_top
+[1.16-]texture:id=respawn_anchor_bottom
+[1.16-]texture:id=respawn_anchor_side0
+[1.16-]texture:id=respawn_anchor_side1
+[1.16-]texture:id=respawn_anchor_side2
+[1.16-]texture:id=respawn_anchor_side3
+[1.16-]texture:id=respawn_anchor_side4
+[1.16-]texture:id=lodestone_top
+[1.16-]texture:id=lodestone_side
+[1.16-]texture:id=blackstone_top
+[1.16-]texture:id=blackstone
+[1.16-]texture:id=polished_blackstone
+[1.16-]texture:id=polished_blackstone_bricks
+[1.16-]texture:id=cracked_polished_blackstone_bricks
+[1.16-]texture:id=chiseled_polished_blackstone
+[1.16-]texture:id=gilded_blackstone
+[1.16-]texture:id=chiseled_nether_bricks
+[1.16-]texture:id=cracked_nether_bricks
+[1.16-]texture:id=quartz_bricks
+
+# Nether gold ore
+[1.16-]block:id=nether_gold_ore,allfaces=0:nether_gold_ore,stdrot=true
+# Soul Fire
+[1.16-]block:id=soul_fire,patch0-3=0:soul_fire_0,patch4-7=0:soul_fire_1,transparency=TRANSPARENT
+# Soul soil
+[1.16-]block:id=soul_soil,allfaces=0:soul_soil,stdrot=true
+# Basalt
+[1.16-]block:id=basalt,data=1,allsides=0:basalt_side,topbottom=0:basalt_top,stdrot=true
+[1.16-]block:id=basalt,data=0,north=0:basalt_top,south=0:basalt_top,east=4000:basalt_side,west=4000:basalt_side,top=0:basalt_side,bottom=0:basalt_side
+[1.16-]block:id=basalt,data=2,north=4000:basalt_side,south=4000:basalt_side,east=0:basalt_top,west=0:basalt_top,top=4000:basalt_side,bottom=4000:basalt_side
+# Polished Basalt
+[1.16-]block:id=polished_basalt,data=1,allsides=0:polished_basalt_side,topbottom=0:polished_basalt_top,stdrot=true
+[1.16-]block:id=polished_basalt,data=0,north=0:polished_basalt_top,south=0:polished_basalt_top,east=4000:polished_basalt_side,west=4000:polished_basalt_side,top=0:polished_basalt_side,bottom=0:polished_basalt_side
+[1.16-]block:id=polished_basalt,data=2,north=4000:polished_basalt_side,south=4000:polished_basalt_side,east=0:polished_basalt_top,west=0:polished_basalt_top,top=4000:polished_basalt_side,bottom=4000:polished_basalt_side
+# Soul Torch
+[1.16-]block:id=soul_torch,patch0=0:soul_torch,transparency=TRANSPARENT
+# Soul Wall torch
+[1.16-]block:id=soul_wall_torch,data=0,data=1,data=2,data=3,patch0=0:soul_torch,transparency=TRANSPARENT
+# Chain
+[1.16-]block:id=chain,patch0=0:chain,patch1=1:chain,transparency=TRANSPARENT
+# Soul Lantern
+[1.16-]block:id=soul_lantern,patch0=0:soul_lantern,transparency=TRANSPARENT
+# Soul Campfire
+[1.16-]block:id=soul_campfire,patch0=0:campfire_log,patch1=0:soul_campfire_log_lit,patch2=0:soul_campfire_fire,transparency=TRANSPARENT
+# Warped Stem
+[1.16-]block:id=warped_stem,data=1,allsides=0:warped_stem,topbottom=0:warped_stem_top,stdrot=true
+[1.16-]block:id=warped_stem,data=0,north=0:warped_stem_top,south=0:warped_stem_top,east=4000:warped_stem,west=4000:warped_stem,top=0:warped_stem,bottom=0:warped_stem
+[1.16-]block:id=warped_stem,data=2,north=4000:warped_stem,south=4000:warped_stem,east=0:warped_stem_top,west=0:warped_stem_top,top=4000:warped_stem,bottom=4000:warped_stem
+# Stripped Warped Stem
+[1.16-]block:id=stripped_warped_stem,data=1,allsides=0:stripped_warped_stem,topbottom=0:stripped_warped_stem_top,stdrot=true
+[1.16-]block:id=stripped_warped_stem,data=0,north=0:stripped_warped_stem_top,south=0:stripped_warped_stem_top,east=4000:stripped_warped_stem,west=4000:stripped_warped_stem,top=0:stripped_warped_stem,bottom=0:stripped_warped_stem
+[1.16-]block:id=stripped_warped_stem,data=2,north=4000:stripped_warped_stem,south=4000:stripped_warped_stem,east=0:stripped_warped_stem_top,west=0:stripped_warped_stem_top,top=4000:stripped_warped_stem,bottom=4000:stripped_warped_stem
+# Warped Hyphae
+[1.16-]block:id=warped_hyphae,data=1,allsides=0:warped_stem,topbottom=0:warped_stem,stdrot=true
+[1.16-]block:id=warped_hyphae,data=0,north=0:warped_stem,south=0:warped_stem,east=4000:warped_stem,west=4000:warped_stem,top=0:warped_stem,bottom=0:warped_stem
+[1.16-]block:id=warped_hyphae,data=2,north=4000:warped_stem,south=4000:warped_stem,east=0:warped_stem,west=0:warped_stem,top=4000:warped_stem,bottom=4000:warped_stem
+# Stripped Warped Hyphae
+[1.16-]block:id=stripped_warped_hyphae,data=1,allsides=0:stripped_warped_stem,topbottom=0:stripped_warped_stem,stdrot=true
+[1.16-]block:id=stripped_warped_hyphae,data=0,north=0:stripped_warped_stem,south=0:stripped_warped_stem,east=4000:stripped_warped_stem,west=4000:stripped_warped_stem,top=0:stripped_warped_stem,bottom=0:stripped_warped_stem
+[1.16-]block:id=stripped_warped_hyphae,data=2,north=4000:stripped_warped_stem,south=4000:stripped_warped_stem,east=0:stripped_warped_stem,west=0:stripped_warped_stem,top=4000:stripped_warped_stem,bottom=4000:stripped_warped_stem
+# Warped Nylium
+[1.16-]block:id=warped_nylium,allsides=0:warped_nylium_side,top=0:warped_nylium,bottom=0:netherrack,stdrot=true
+# Warped Fungus
+[1.16-]block:id=warped_fungus,patch0-1=0:warped_fungus,transparency=TRANSPARENT
+# Warped Wart Block
+[1.16-]block:id=warped_wart_block,allfaces=0:warped_wart_block,stdrot=true
+# Warped Roots
+[1.16-]block:id=warped_roots,patch0-1=0:warped_roots,transparency=TRANSPARENT
+# Nether Sprouts
+[1.16-]block:id=nether_sprouts,patch0-1=0:nether_sprouts,transparency=TRANSPARENT
+# Crimson Stem
+[1.16-]block:id=crimson_stem,data=1,allsides=0:crimson_stem,topbottom=0:crimson_stem_top,stdrot=true
+[1.16-]block:id=crimson_stem,data=0,north=0:crimson_stem_top,south=0:crimson_stem_top,east=4000:crimson_stem,west=4000:crimson_stem,top=0:crimson_stem,bottom=0:crimson_stem
+[1.16-]block:id=crimson_stem,data=2,north=4000:crimson_stem,south=4000:crimson_stem,east=0:crimson_stem_top,west=0:crimson_stem_top,top=4000:crimson_stem,bottom=4000:crimson_stem
+# Stripped Crimson Stem
+[1.16-]block:id=stripped_crimson_stem,data=1,allsides=0:stripped_crimson_stem,topbottom=0:stripped_crimson_stem_top,stdrot=true
+[1.16-]block:id=stripped_crimson_stem,data=0,north=0:stripped_crimson_stem_top,south=0:stripped_crimson_stem_top,east=4000:stripped_crimson_stem,west=4000:stripped_crimson_stem,top=0:stripped_crimson_stem,bottom=0:stripped_crimson_stem
+[1.16-]block:id=stripped_crimson_stem,data=2,north=4000:stripped_crimson_stem,south=4000:stripped_crimson_stem,east=0:stripped_crimson_stem_top,west=0:stripped_crimson_stem_top,top=4000:stripped_crimson_stem,bottom=4000:stripped_crimson_stem
+# Crimson Hyphae
+[1.16-]block:id=crimson_hyphae,data=1,allsides=0:crimson_stem,topbottom=0:crimson_stem,stdrot=true
+[1.16-]block:id=crimson_hyphae,data=0,north=0:crimson_stem,south=0:crimson_stem,east=4000:crimson_stem,west=4000:crimson_stem,top=0:crimson_stem,bottom=0:crimson_stem
+[1.16-]block:id=crimson_hyphae,data=2,north=4000:crimson_stem,south=4000:crimson_stem,east=0:crimson_stem,west=0:crimson_stem,top=4000:crimson_stem,bottom=4000:crimson_stem
+# Stripped Crimson Hyphae
+[1.16-]block:id=stripped_crimson_hyphae,data=1,allsides=0:stripped_crimson_stem,topbottom=0:stripped_crimson_stem,stdrot=true
+[1.16-]block:id=stripped_crimson_hyphae,data=0,north=0:stripped_crimson_stem,south=0:stripped_crimson_stem,east=4000:stripped_crimson_stem,west=4000:stripped_crimson_stem,top=0:stripped_crimson_stem,bottom=0:stripped_crimson_stem
+[1.16-]block:id=stripped_crimson_hyphae,data=2,north=4000:stripped_crimson_stem,south=4000:stripped_crimson_stem,east=0:stripped_crimson_stem,west=0:stripped_crimson_stem,top=4000:stripped_crimson_stem,bottom=4000:stripped_crimson_stem
+# Crimson Nylium
+[1.16-]block:id=crimson_nylium,allsides=0:crimson_nylium_side,top=0:crimson_nylium,bottom=0:netherrack,stdrot=true
+# Crimson Fungus
+[1.16-]block:id=crimson_fungus,patch0-1=0:crimson_fungus,transparency=TRANSPARENT
+# Crimson Roots
+[1.16-]block:id=crimson_roots,patch0-1=0:crimson_roots,transparency=TRANSPARENT
+# Shroomlight
+[1.16-]block:id=shroomlight,allfaces=0:shroomlight,stdrot=true
+# Weeping Vines
+[1.16-]block:id=weeping_vines,patch0-1=0:weeping_vines,transparency=TRANSPARENT
+# Weeping Vines Plant
+[1.16-]block:id=weeping_vines_plant,patch0-1=0:weeping_vines_plant,transparency=TRANSPARENT
+# Twisting Vines
+[1.16-]block:id=twisting_vines,patch0-1=0:twisting_vines,transparency=TRANSPARENT
+# Twisting Vines Plant
+[1.16-]block:id=twisting_vines_plant,patch0-1=0:twisting_vines_plant,transparency=TRANSPARENT
+# Crimson Planks
+[1.16-]block:id=crimson_planks,allfaces=0:crimson_planks,stdrot=true
+# Warped Planks
+[1.16-]block:id=warped_planks,allfaces=0:warped_planks,stdrot=true
+# Crimson slab
+[1.16-]block:id=crimson_slab,data=0,data=1,data=2,data=3,allfaces=0:crimson_planks,stdrot=true,transparency=SEMITRANSPARENT
+[1.16-]block:id=crimson_slab,data=4,data=5,allfaces=0:crimson_planks,stdrot=true
+# Warped slab
+[1.16-]block:id=warped_slab,data=0,data=1,data=2,data=3,allfaces=0:warped_planks,stdrot=true,transparency=SEMITRANSPARENT
+[1.16-]block:id=warped_slab,data=4,data=5,allfaces=0:warped_planks,stdrot=true
+# Warped pressure plate
+[1.16-]block:id=warped_pressure_plate,allfaces=0:warped_planks,stdrot=true,transparency=TRANSPARENT
+# Crimson pressure plate
+[1.16-]block:id=crimson_pressure_plate,allfaces=0:crimson_planks,stdrot=true,transparency=TRANSPARENT
+# Crimson Fence
+[1.16-]block:id=crimson_fence,patch0-2=0:crimson_planks,transparency=TRANSPARENT
+# Warped Fence
+[1.16-]block:id=warped_fence,patch0-2=0:warped_planks,transparency=TRANSPARENT
+# Crimson Trapdoor
+[1.16-]block:id=crimson_trapdoor,allfaces=0:crimson_trapdoor,stdrot=true,transparency=TRANSPARENT
+# Warped Trapdoor
+[1.16-]block:id=warped_trapdoor,allfaces=0:warped_trapdoor,stdrot=true,transparency=TRANSPARENT
+# Crimson Fence gate
+[1.16-]block:id=crimson_fence_gate,patch0-2=0:crimson_planks,stdrot=true,transparency=TRANSPARENT
+# Warped Fence gate
+[1.16-]block:id=warped_fence_gate,patch0-2=0:warped_planks,stdrot=true,transparency=TRANSPARENT
+# Crimson stairs
+[1.16-]block:id=crimson_stairs,patch0-2=0:crimson_planks,transparency=SEMITRANSPARENT
+# Warped stairs
+[1.16-]block:id=warped_stairs,patch0-2=0:warped_planks,transparency=SEMITRANSPARENT
+# Crimson button
+[1.16-]block:id=crimson_button,allfaces=0:crimson_planks,stdrot=true,transparency=TRANSPARENT
+# Warped button
+[1.16-]block:id=warped_button,allfaces=0:warped_planks,stdrot=true,transparency=TRANSPARENT
+# Crimson Door
+[1.16-]block:id=crimson_door,data=*,patch0=0:crimson_door_top,patch1=0:crimson_door_bottom,transparency=TRANSPARENT
+# Warped Door
+[1.16-]block:id=warped_door,data=*,patch0=0:warped_door_top,patch1=0:warped_door_bottom,transparency=TRANSPARENT
+# Crimson sign
+[1.16-]block:id=crimson_sign,patch0=0,patch1=1,patch2=2,patch3=3,patch4=4,patch5=5,patch6=6,patch7=7,patch8=8,patch9=9,transparency=TRANSPARENT,txtid=crimson_sign
+# Crimson Wall sign
+[1.16-]block:id=crimson_wall_sign,patch0=0,patch1=1,patch2=2,patch3=3,patch4=4,patch5=5,transparency=TRANSPARENT,txtid=crimson_sign
+# Warped sign
+[1.16-]block:id=warped_sign,patch0=0,patch1=1,patch2=2,patch3=3,patch4=4,patch5=5,patch6=6,patch7=7,patch8=8,patch9=9,transparency=TRANSPARENT,txtid=warped_sign
+# Warped Wall sign
+[1.16-]block:id=warped_wall_sign,patch0=0,patch1=1,patch2=2,patch3=3,patch4=4,patch5=5,transparency=TRANSPARENT,txtid=warped_sign
+# Target
+[1.16-]block:id=target,allsides=0:target_side,topbottom=0:target_top,stdrot=true
+# Netherite Block
+[1.16-]block:id=netherite_block,allfaces=0:netherite_block,stdrot=true
+# Ancient Debris
+[1.16-]block:id=ancient_debris,top=0:ancient_debris_top,bottom=0:ancient_debris_top,allsides=0:ancient_debris_side,stdrot=true
+# Crying Obsidian
+[1.16-]block:id=crying_obsidian,allfaces=0:crying_obsidian,stdrot=true
+# Respawn Anchor
+[1.16-]block:id=respawn_anchor,data=0,allsides=0:respawn_anchor_side0,top=0:respawn_anchor_top_off,bottom=0:respawn_anchor_bottom,stdrot=true
+[1.16-]block:id=respawn_anchor,data=1,allsides=0:respawn_anchor_side1,top=0:respawn_anchor_top,bottom=0:respawn_anchor_bottom,stdrot=true
+[1.16-]block:id=respawn_anchor,data=2,allsides=0:respawn_anchor_side2,top=0:respawn_anchor_top,bottom=0:respawn_anchor_bottom,stdrot=true
+[1.16-]block:id=respawn_anchor,data=3,allsides=0:respawn_anchor_side3,top=0:respawn_anchor_top,bottom=0:respawn_anchor_bottom,stdrot=true
+[1.16-]block:id=respawn_anchor,data=4,allsides=0:respawn_anchor_side4,top=0:respawn_anchor_top,bottom=0:respawn_anchor_bottom,stdrot=true
+# Potted Crimson Fungus
+[1.16-]block:id=potted_crimson_fungus,patch0-5=0:flower_pot,patch6=0:dirt,patch7-8=0:crimson_fungus,transparency=TRANSPARENT
+# Potted Warped Fungus
+[1.16-]block:id=potted_warped_fungus,patch0-5=0:flower_pot,patch6=0:dirt,patch7-8=0:warped_fungus,transparency=TRANSPARENT
+# Potted Crimson Roots
+[1.16-]block:id=potted_crimson_roots,patch0-5=0:flower_pot,patch6=0:dirt,patch7-8=0:crimson_roots,transparency=TRANSPARENT
+# Potted Warped Roots
+[1.16-]block:id=potted_warped_roots,patch0-5=0:flower_pot,patch6=0:dirt,patch7-8=0:warped_roots,transparency=TRANSPARENT
+# Lodestone
+[1.16-]block:id=lodestone,top=0:lodestone_top,bottom=0:lodestone_top,allsides=0:lodestone_side,stdrot=true
+# Blackstone
+[1.16-]block:id=blackstone,top=0:blackstone_top,bottom=0:blackstone_top,allsides=0:blackstone,stdrot=true
+# Blockstone stairs
+[1.16-]block:id=blackstone_stairs,patch0=0:blackstone,patch1=0:blackstone_top,patch2=0:blackstone_top,transparency=SEMITRANSPARENT
+# Blackstone wall
+[1.16-]block:id=blackstone_wall,patch0-2=0:blackstone,transparency=TRANSPARENT
+# Blackstone slab
+[1.16-]block:id=blackstone_slab,data=0,data=1,data=2,data=3,allsides=0:blackstone,top=0:blackstone_top,bottom=0:blackstone_top,stdrot=true,transparency=SEMITRANSPARENT
+[1.16-]block:id=blackstone_slab,data=4,data=5,allsides=0:blackstone,top=0:blackstone_top,bottom=0:blackstone_top,stdrot=true
+# Polished Blackstone
+[1.16-]block:id=polished_blackstone,allfaces=0:polished_blackstone,stdrot=true
+# Polished Blackstone Bricks
+[1.16-]block:id=polished_blackstone_bricks,allfaces=0:polished_blackstone_bricks,stdrot=true
+# Cracled Polished Blackstone Bricks
+[1.16-]block:id=cracked_polished_blackstone_bricks,allfaces=0:cracked_polished_blackstone_bricks,stdrot=true
+# Chiseled Polished Blackstone
+[1.16-]block:id=chiseled_polished_blackstone,allfaces=0:chiseled_polished_blackstone,stdrot=true
+# Polished Blackstone Brick slab
+[1.16-]block:id=polished_blackstone_brick_slab,data=0,data=1,data=2,data=3,allsides=0:polished_blackstone_bricks,top=0:polished_blackstone_bricks,bottom=0:polished_blackstone_bricks,stdrot=true,transparency=SEMITRANSPARENT
+[1.16-]block:id=polished_blackstone_brick_slab,data=4,data=5,allsides=0:polished_blackstone_bricks,top=0:polished_blackstone_bricks,bottom=0:polished_blackstone_bricks,stdrot=true
+# Polished Blockstone stairs
+[1.16-]block:id=polished_blackstone_stairs,patch0=0:polished_blackstone,patch1=0:polished_blackstone,patch2=0:polished_blackstone,transparency=SEMITRANSPARENT
+# Polished Blackstone brick wall
+[1.16-]block:id=polished_blackstone_brick_wall,patch0-2=0:polished_blackstone_bricks,transparency=TRANSPARENT
+# Polished Blackstone wall
+[1.16-]block:id=polished_blackstone_wall,patch0-2=0:polished_blackstone,transparency=TRANSPARENT
+# Gilded Blackstone
+[1.16-]block:id=gilded_blackstone,allfaces=0:gilded_blackstone,stdrot=true
+# Polished Blackstone slab
+[1.16-]block:id=polished_blackstone_slab,data=0,data=1,data=2,data=3,allsides=0:polished_blackstone,top=0:polished_blackstone,bottom=0:polished_blackstone,stdrot=true,transparency=SEMITRANSPARENT
+[1.16-]block:id=polished_blackstone_slab,data=4,data=5,allsides=0:polished_blackstone,top=0:polished_blackstone,bottom=0:polished_blackstone,stdrot=true
+# Polished Blockstone Brick stairs
+[1.16-]block:id=polished_blackstone_brick_stairs,patch0=0:polished_blackstone_bricks,patch1=0:polished_blackstone_bricks,patch2=0:polished_blackstone_bricks,transparency=SEMITRANSPARENT
+# Polished Blackstone pressure plate
+[1.16-]block:id=polished_blackstone_pressure_plate,allfaces=0:polished_blackstone,stdrot=true,transparency=TRANSPARENT
+# Polished Blackstone button
+[1.16-]block:id=polished_blackstone_button,allfaces=0:polished_blackstone,stdrot=true,transparency=TRANSPARENT
+# Chiseled Nether Bricks
+[1.16-]block:id=chiseled_nether_bricks,allfaces=0:chiseled_nether_bricks,stdrot=true
+# Cracked Nether Bricks
+[1.16-]block:id=cracked_nether_bricks,allfaces=0:cracked_nether_bricks,stdrot=true
+# Quartz Bricks
+[1.16-]block:id=quartz_bricks,allfaces=0:quartz_bricks,stdrot=true
+
+
