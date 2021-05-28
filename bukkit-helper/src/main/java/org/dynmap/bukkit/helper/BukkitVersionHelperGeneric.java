@@ -132,15 +132,19 @@ public abstract class BukkitVersionHelperGeneric extends BukkitVersionHelper {
         cw_gethandle = getMethod(craftworld, new String[] { "getHandle" }, new Class[0]);
         /* CraftChunkSnapshot */
         craftchunksnapshot = getOBCClass("org.bukkit.craftbukkit.CraftChunkSnapshot");
-		try {
+        try {
 			biomebasearray = getNMSClass("[Lnet.minecraft.world.biome.Biome;");
 		} catch (Exception x) {
 			biomebasearray = getNMSClass("[Lnet.minecraft.server.BiomeBase;");
 		}
         ccss_biome = getPrivateFieldNoFail(craftchunksnapshot, new String[] { "biome" }, biomebasearray);
         if(ccss_biome == null) {
-            biomestorage = getNMSClass("net.minecraft.server.BiomeStorage");
-            biomestoragebase = getPrivateField(biomestorage, new String[] { "g", "f" }, biomebasearray);
+        	try {
+        		biomestorage = getNMSClass("net.minecraft.world.biome.BiomeContainer");
+        	} catch (Exception x) {
+        		biomestorage = getNMSClass("net.minecraft.server.BiomeStorage");
+        	}
+            biomestoragebase = getPrivateField(biomestorage, new String[] { "h", "g", "f" }, biomebasearray);
             ccss_biome = getPrivateField(craftchunksnapshot, new String[] { "biome" }, biomestorage);
         }
         /* CraftChunk */
@@ -573,6 +577,8 @@ public abstract class BukkitVersionHelperGeneric extends BukkitVersionHelper {
     						String json = new String(Base64Coder.decode(val), Charsets.UTF_8);
     						result = gson.fromJson(json, TexturesPayload.class);
     					} catch (JsonParseException e) {
+    					} catch (IllegalArgumentException x) {
+    						Log.warning("Malformed response from skin URL check: " + val);
     					}
     					if ((result != null) && (result.textures != null) && (result.textures.containsKey("SKIN"))) {
     						url = result.textures.get("SKIN").url;

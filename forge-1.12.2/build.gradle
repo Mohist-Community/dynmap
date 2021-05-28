@@ -1,10 +1,8 @@
 buildscript {
     repositories {
+        maven { url = 'https://files.minecraftforge.net/maven' }
         jcenter()
-        maven {
-            name = "forge"
-            url = "http://files.minecraftforge.net/maven"
-        }
+        mavenCentral()        
         maven {url = "https://oss.sonatype.org/content/repositories/snapshots/"}
     }
     dependencies {
@@ -13,10 +11,13 @@ buildscript {
 }
 
 apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 dependencies {
-    compile project(":DynmapCore")
-    compile project(":DynmapCoreAPI")
+    compile project(path: ":DynmapCore", configuration: "shadow")
+    compile 'com.googlecode.json-simple:json-simple:1.1.1'
+    compile 'org.yaml:snakeyaml:1.23'
+    compile 'org.spongepowered:spongeapi:7.0.0'
 }
 
 sourceCompatibility = 1.8
@@ -28,6 +29,10 @@ repositories {
         name = 'forge'
         url = 'http://files.minecraftforge.net/maven'
     }
+    maven {
+    	name = 'sponge'
+    	url = 'https://repo.spongepowered.org/maven'
+    }    	
 }
 minecraft {
     version = "1.12.2-14.23.4.2705"
@@ -61,29 +66,15 @@ processResources
     rename '(.+_at.cfg)', 'META-INF/$1'
 }
 
-jar {
-   manifest {
-        attributes 'FMLAT': 'dynmap_at.cfg'
-   }
-}
-
 shadowJar {
     dependencies {
-        include(dependency('com.googlecode.json-simple:json-simple:'))
-		include(dependency('org.yaml:snakeyaml:'))
-		include(dependency('com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:'))
-        include(dependency('org.eclipse.jetty::'))
-        include(dependency('org.eclipse.jetty.orbit:javax.servlet:'))
         include(dependency(':DynmapCore'))
-        include(dependency(':DynmapCoreAPI'))
-	}
-	relocate('org.json.simple', 'org.dynmap.json.simple')
-	relocate('org.yaml.snakeyaml', 'org.dynmap.snakeyaml')
-	relocate('org.eclipse.jetty', 'org.dynmap.jetty')
-	relocate('org.owasp.html', 'org.dynmap.org.owasp.html')
-	relocate('javax.servlet', 'org.dynmap.javax.servlet' )
+    }
     archiveName = "Dynmap-${parent.version}-forge-1.12.2.jar"
     destinationDir = file '../target'
+    manifest {
+        attributes 'FMLAT': 'dynmap_at.cfg'
+    }
 }
 
 shadowJar.doLast {

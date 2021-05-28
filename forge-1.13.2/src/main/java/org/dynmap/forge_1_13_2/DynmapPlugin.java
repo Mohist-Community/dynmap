@@ -27,19 +27,21 @@ import java.util.concurrent.FutureTask;
 import java.util.regex.Pattern;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockFlowingFluid;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
-import net.minecraft.command.ICommandSource;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.fluid.IFluidState;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.network.NetHandlerPlayServer;
 import net.minecraft.network.NetworkManager;
+import net.minecraft.network.play.server.SPacketTitle;
 import net.minecraft.particles.IParticleData;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.UserListBans;
@@ -52,6 +54,8 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.registry.IRegistry;
+import net.minecraft.util.registry.RegistryNamespaced;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.IBlockReader;
@@ -67,12 +71,14 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.ServerChatEvent;
 import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.event.world.WorldEvent;
-import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerChangedDimensionEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedOutEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerRespawnEvent;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.ForgeRegistry;
 import net.minecraftforge.registries.RegistryManager;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
@@ -120,7 +126,11 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import net.minecraft.state.IProperty;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -155,7 +165,6 @@ public class DynmapPlugin
     private long perTickLimit = (50000000); // 50 ms
     private boolean isMCPC = false;
     private boolean useSaveFolder = true;
-    private Field displayName = null; // MCPC+ display name
 	
     private static final int SIGNPOST_ID = 63;
     private static final int WALLSIGN_ID = 68;
@@ -177,7 +186,7 @@ public class DynmapPlugin
      * Initialize block states (org.dynmap.blockstate.DynmapBlockState)
      */
     public void initializeBlockStates() {
-    	stateByID = new DynmapBlockState[512*16];	// Simple map - scale as needed
+    	stateByID = new DynmapBlockState[512*32];	// Simple map - scale as needed
     	Arrays.fill(stateByID, DynmapBlockState.AIR); // Default to air
 
     	ObjectIntIdentityMap<IBlockState> bsids = Block.BLOCK_STATE_IDS;
@@ -195,18 +204,19 @@ public class DynmapPlugin
     			stateByID = Arrays.copyOf(stateByID, idx+1);
     			Arrays.fill(stateByID, plen, stateByID.length, DynmapBlockState.AIR);
     		}
-    		Block b = bs.getBlock();
+            Block b = bs.getBlock();
     		// If this is new block vs last, it's the base block state
     		if (b != baseb) {
     			basebs = null;
-    			baseidx = idx;
+                baseidx = idx;
+                baseb = b;
     		}
     		
             ResourceLocation ui = b.getRegistryName();
             if (ui == null) {
             	continue;
             }
-        	String bn = ui.getNamespace() + ":" + ui.getPath();
+            String bn = ui.getNamespace() + ":" + ui.getPath();
             // Only do defined names, and not "air"
             if (!bn.equals(DynmapBlockState.AIR_BLOCK)) {
                 Material mat = bs.getMaterial();
@@ -217,8 +227,10 @@ public class DynmapPlugin
                 	}
                 	statename += p.getName() + "=" + bs.get(p).toString();
                 }
+                //Log.info("bn=" + bn + ", statenme=" + statename + ",idx=" + idx + ",baseidx=" + baseidx);
                 DynmapBlockState dbs = new DynmapBlockState(basebs, idx - baseidx, bn, statename, mat.toString(), idx);
                 stateByID[idx] = dbs;
+                if (basebs == null) { basebs = dbs; }
                 if (mat.isSolid()) {
                     dbs.setSolid();
                 }
@@ -231,11 +243,14 @@ public class DynmapPlugin
                 if (mat == Material.LEAVES) {
                     dbs.setLeaves();
                 }
+                if ((!bs.getFluidState().isEmpty()) && !(bs.getBlock() instanceof BlockFlowingFluid)) {
+                    dbs.setWaterlogged();
+                }
             }
     	}
         for (int gidx = 0; gidx < DynmapBlockState.getGlobalIndexMax(); gidx++) {
         	DynmapBlockState bs = DynmapBlockState.getStateByGlobalIndex(gidx);
-        	Log.info(gidx + ":" + bs.toString() + ", gidx=" + bs.globalStateIndex + ", sidx=" + bs.stateIndex);
+        	//Log.info(gidx + ":" + bs.toString() + ", gidx=" + bs.globalStateIndex + ", sidx=" + bs.stateIndex);
         }
     }
 
@@ -252,10 +267,10 @@ public class DynmapPlugin
     public static final Biome[] getBiomeList() {
         if (biomelist == null) {
         	biomelist = new Biome[256];
-        	Iterator<Biome> iter = Biome.MUTATION_TO_BASE_ID_MAP.iterator();
+        	Iterator<Biome> iter = ForgeRegistries.BIOMES.iterator();
         	while (iter.hasNext()) {
-        		Biome b = iter.next();
-        		int bidx = Biome.MUTATION_TO_BASE_ID_MAP.get(b);
+                Biome b = iter.next();
+                int bidx = RegistryNamespaced.BIOME.getId(b);
         		if (bidx >= biomelist.length) {
         			biomelist = Arrays.copyOf(biomelist, bidx + biomelist.length);
         		}
@@ -425,14 +440,7 @@ public class DynmapPlugin
     public DynmapPlugin(MinecraftServer srv)
     {
         plugin = this;
-        this.server = srv;
-        
-        displayName = null;
-        try {
-            displayName = EntityPlayerMP.class.getField("displayName");
-        } catch (SecurityException e) {
-        } catch (NoSuchFieldException e) {
-        }
+        this.server = srv;        
     }
 
     public boolean isOp(String player) {
@@ -445,24 +453,20 @@ public class DynmapPlugin
     	return (server.isSinglePlayer() && player.equalsIgnoreCase(server.getServerOwner()));
     }
     
-    private boolean hasPerm(ICommandSource sender, String permission) {
+    private boolean hasPerm(EntityPlayer psender, String permission) {  
         PermissionsHandler ph = PermissionsHandler.getHandler();
-        if(ph != null) {
-            if((sender instanceof EntityPlayer) && ph.hasPermission(((EntityPlayer)sender).getEntity().getName().getString(), permission)) {
-                return true;
-            }
+        if((psender != null) && (ph != null) && ph.hasPermission(psender.getEntity().getName().getString(), permission)) {
+            return true;
         }
-        return permissions.has(sender, permission);
+        return permissions.has(psender, permission);
     }
     
-    private boolean hasPermNode(ICommandSource sender, String permission) {
+    private boolean hasPermNode(EntityPlayer psender, String permission) {
         PermissionsHandler ph = PermissionsHandler.getHandler();
-        if(ph != null) {
-            if((sender instanceof EntityPlayer) && ph.hasPermissionNode(((EntityPlayer)sender).getEntity().getName().getString(), permission)) {
-                return true;
-            }
+        if((psender != null) && (ph != null) && ph.hasPermissionNode(psender.getEntity().getName().getString(), permission)) {
+            return true;
         }
-        return permissions.hasPermissionNode(sender, permission);
+        return permissions.hasPermissionNode(psender, permission);
     } 
 
     private Set<String> hasOfflinePermissions(String player, Set<String> perms) {
@@ -1008,7 +1012,8 @@ public class DynmapPlugin
         public File getModContainerFile(String name) {
         	ModFileInfo mfi = ModList.get().getModFileById(name);    // Try case sensitive lookup
             if (mfi != null) {
-            	return mfi.getFile().getFilePath().toFile();
+            	File f = mfi.getFile().getFilePath().toFile();
+                return f;
             }
         	return null;
         }
@@ -1031,8 +1036,8 @@ public class DynmapPlugin
         @Override
         public InputStream openResource(String modid, String rname) {
             if (modid != null) {
-                ModContainer mc = ModList.get().getModContainerById(modid).get();
-                Object mod = (mc != null) ? mc.getMod() : null;
+                Optional<? extends ModContainer> mc = ModList.get().getModContainerById(modid);
+                Object mod = (mc.isPresent()) ? mc.get().getMod() : null;
                 if (mod != null) {
                     InputStream is = mod.getClass().getClassLoader().getResourceAsStream(rname);
                     if (is != null) {
@@ -1041,8 +1046,9 @@ public class DynmapPlugin
                 }
             }
             List<ModInfo> mcl = ModList.get().getMods();
-            for (ModInfo mc : mcl) {
-                Object mod = ModList.get().getModContainerById(mc.getModId()).get().getMod();
+            for (ModInfo mci : mcl) {
+                Optional<? extends ModContainer> mc = ModList.get().getModContainerById(mci.getModId());
+                Object mod = (mc.isPresent()) ? mc.get().getMod() : null;
                 if (mod == null) continue;
                 InputStream is = mod.getClass().getClassLoader().getResourceAsStream(rname);
                 if (is != null) {
@@ -1129,8 +1135,10 @@ public class DynmapPlugin
         @Override
         public String getName()
         {
-        	if(player != null)
-        		return player.getEntity().getName().getString();
+        	if(player != null) {
+        		String n = player.getEntity().getName().getString();;
+        		return n;
+        	}
         	else
         		return "[Server]";
         }
@@ -1138,14 +1146,8 @@ public class DynmapPlugin
         public String getDisplayName()
         {
         	if(player != null) {
-        	    if (displayName != null) {
-        	        try {
-                        return (String) displayName.get(player);
-                    } catch (IllegalArgumentException e) {
-                    } catch (IllegalAccessException e) {
-                    }
-        	    }
-        		return player.getDisplayName().getUnformattedComponentText();
+        		String n = player.getDisplayName().getString();
+        		return n;
         	}
         	else
         		return "[Server]";
@@ -1300,17 +1302,37 @@ public class DynmapPlugin
         public UUID getUUID() {
         	return uuid;
         }
+        /**
+         * Send title and subtitle text (called from server thread)
+         */
+        @Override
+        public void sendTitleText(String title, String subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {
+        	if (player instanceof EntityPlayerMP) {
+        		EntityPlayerMP mp = (EntityPlayerMP) player;
+        		SPacketTitle times = new SPacketTitle(fadeInTicks, stayTicks, fadeOutTicks);
+        		mp.connection.sendPacket(times);
+                if (title != null) {
+            		SPacketTitle titlepkt = new SPacketTitle(SPacketTitle.Type.TITLE, new TextComponentString(title));
+            		mp.connection.sendPacket(titlepkt);
+                }
+
+                if (subtitle != null) {
+            		SPacketTitle subtitlepkt = new SPacketTitle(SPacketTitle.Type.SUBTITLE, new TextComponentString(subtitle));
+            		mp.connection.sendPacket(subtitlepkt);
+                }
+        	}
+    	}
     }
     /* Handler for generic console command sender */
     public class ForgeCommandSender implements DynmapCommandSender
     {
-        private ICommandSource sender;
+        private CommandSource sender;
 
         protected ForgeCommandSender() {
         	sender = null;
         }
 
-        public ForgeCommandSender(ICommandSource send)
+        public ForgeCommandSender(CommandSource send)
         {
             sender = send;
         }
@@ -1326,7 +1348,7 @@ public class DynmapPlugin
         {
         	if(sender != null) {
                 ITextComponent ichatcomponent = new TextComponentString(msg);
-        	    sender.sendMessage(ichatcomponent);
+                sender.sendFeedback(ichatcomponent, false);
         	}
         }
 
@@ -1357,15 +1379,22 @@ public class DynmapPlugin
             if(bb != null) {
                 String id = bb.getRegistryName().getPath();
                 float tmp = bb.getDefaultTemperature(), hum = bb.getDownfall();
+                int watermult = bb.getWaterColor();
+                Log.verboseinfo("biome[" + i + "]: hum=" + hum + ", tmp=" + tmp + ", mult=" + Integer.toHexString(watermult));
+
                 BiomeMap bmap = BiomeMap.byBiomeID(i);
                 if (bmap.isDefault()) {
-                    BiomeMap m = new BiomeMap(i, id, tmp, hum);
-                    Log.verboseinfo("Add custom biome [" + m.toString() + "] (" + i + ")");
+                    bmap = new BiomeMap(i, id, tmp, hum);
+                    Log.verboseinfo("Add custom biome [" + bmap.toString() + "] (" + i + ")");
                     cnt++;
                 }
                 else {
                     bmap.setTemperature(tmp);
                     bmap.setRainfall(hum);
+                }
+                if (watermult != -1) {
+                    bmap.setWaterColorMultiplier(watermult);
+                	Log.verboseinfo("Set watercolormult for " + bmap.toString() + " (" + i + ") to " + Integer.toHexString(watermult));
                 }
             }
         }
@@ -1415,7 +1444,7 @@ public class DynmapPlugin
 
         /* Inject dependencies */
         core.setPluginJarFile(DynmapMod.jarfile);
-        core.setPluginVersion(Version.VER);
+        core.setPluginVersion(DynmapMod.ver);
         core.setMinecraftVersion(mcver);
         core.setDataFolder(dataDirectory);
         core.setServer(fserver);
@@ -1427,7 +1456,36 @@ public class DynmapPlugin
         {
         	return;
         }
+        // Extract default permission example, if needed
+        File filepermexample = new File(core.getDataFolder(), "permissions.yml.example");
+        core.createDefaultFileFromResource("/permissions.yml.example", filepermexample);
+
         DynmapCommonAPIListener.apiInitialized(core);
+    }
+    
+    private static int test(CommandSource source) throws CommandSyntaxException
+	{
+        System.out.println(source.toString());
+		return 1;
+    }
+    
+    private DynmapCommand dynmapCmd;
+    private DmapCommand dmapCmd;
+    private DmarkerCommand dmarkerCmd;
+    private DynmapExpCommand dynmapexpCmd;
+
+    public void onStarting(CommandDispatcher<CommandSource> cd) {
+        /* Register command hander */
+        dynmapCmd = new DynmapCommand(this);
+        dmapCmd = new DmapCommand(this);
+        dmarkerCmd = new DmarkerCommand(this);
+        dynmapexpCmd = new DynmapExpCommand(this);
+        dynmapCmd.register(cd);
+        dmapCmd.register(cd);
+        dmarkerCmd.register(cd);
+        dynmapexpCmd.register(cd);
+
+        Log.info("Register commands");
     }
     
     public void onStart() {
@@ -1482,13 +1540,6 @@ public class DynmapPlugin
         /* Register our update trigger events */
         registerEvents();
         Log.info("Register events");
-        /* Register command hander */
-        Commands cm = server.getCommandManager();
-        cm.getDispatcher().register(new DynmapCommand(this));
-        cm.getDispatcher().register(new DmapCommand(this));
-        cm.getDispatcher().register(new DmarkerCommand(this));
-        cm.getDispatcher().register(new DynmapExpCommand(this));
-        Log.info("Register commands");
         
         /* Submit metrics to mcstats.org */
         initMetrics();
@@ -1525,20 +1576,30 @@ public class DynmapPlugin
         Log.info("Disabled");
     }
 
-    void onCommand(ICommandSource sender, String cmd, String[] args)
+    void onCommand(CommandSource sender, String cmd, String[] args)
     {
         DynmapCommandSender dsender;
+        EntityPlayer psender;
+        try {
+            psender = sender.asPlayer();
+        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException x) {
+            psender = null;
+        }
 
-        if (sender instanceof EntityPlayer)
+        if (psender != null)
         {
-            dsender = getOrAddPlayer((EntityPlayer)sender);
+            dsender = new ForgePlayer(psender);
         }
         else
         {
             dsender = new ForgeCommandSender(sender);
         }
-
-        core.processCommand(dsender, cmd, cmd, args);
+        try {
+        	core.processCommand(dsender, cmd, cmd, args);
+        } catch (Exception x) {
+            dsender.sendMessage("Command internal error: " + x.getMessage());
+        	Log.severe("Error with command: " + cmd + Arrays.deepToString(args), x);
+        }
     }
 
     private DynmapLocation toLoc(World worldObj, double x, double y, double z)
@@ -1599,6 +1660,7 @@ public class DynmapPlugin
 			IWorld w = event.getWorld();
 			if(!(w instanceof WorldServer)) return;
             final ForgeWorld fw = getWorld(w);
+			if (fw == null) return;
             // This event can be called from off server thread, so push processing there
             core.getServer().scheduleServerTask(new Runnable() {
             	public void run() {
@@ -2011,28 +2073,39 @@ public class DynmapPlugin
             core.serverStarted();
         }
     }
+    public MinecraftServer getMCServer() {
+        return server;
+    }
 }
 
-class DynmapCommandHandler extends LiteralArgumentBuilder<CommandSource>
+class DynmapCommandHandler
 {
     private String cmd;
     private DynmapPlugin plugin;
 
     public DynmapCommandHandler(String cmd, DynmapPlugin p)
     {
-    	super(cmd);
         this.cmd = cmd;
         this.plugin = p;
     }
 
-//    @Override
-    public void execute(MinecraftServer server, ICommandSource sender,
-            String[] args) throws CommandException {
-        plugin.onCommand(sender, cmd, args);
+    public void register(CommandDispatcher<CommandSource> cd) {
+        cd.register(Commands.literal(cmd).
+            then(RequiredArgumentBuilder.<CommandSource, String> argument("args", StringArgumentType.greedyString()).
+            executes((ctx) -> this.execute(plugin.getMCServer(), ctx.getSource(), ctx.getInput()))).
+            executes((ctx) -> this.execute(plugin.getMCServer(), ctx.getSource(), ctx.getInput())));
     }
 
 //    @Override
-    public String getUsage(ICommandSource arg0) {
+    public int execute(MinecraftServer server, CommandSource sender,
+            String cmdline) throws CommandException {
+        String[] args = cmdline.split("\\s+");
+        plugin.onCommand(sender, cmd, Arrays.copyOfRange(args, 1, args.length));
+        return 1;
+    }
+
+//    @Override
+    public String getUsage(CommandSource arg0) {
         return "Run /" + cmd + " help for details on using command";
     }
 }

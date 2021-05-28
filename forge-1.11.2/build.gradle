@@ -17,6 +17,9 @@ apply plugin: 'com.github.johnrengelman.shadow'
 
 dependencies {
     compile project(path: ":DynmapCore", configuration: "shadow")
+    compile 'com.googlecode.json-simple:json-simple:1.1.1'
+    compile 'org.yaml:snakeyaml:1.23'
+    compile 'org.spongepowered:spongeapi:7.0.0'
 }
 
 sourceCompatibility = 1.8
@@ -28,6 +31,10 @@ repositories {
         name = 'forge'
         url = 'http://files.minecraftforge.net/maven'
     }
+    maven {
+    	name = 'sponge'
+    	url = 'https://repo.spongepowered.org/maven'
+    }    	
 }
 minecraft {
     version = "1.11.2-13.20.0.2315"
@@ -71,6 +78,7 @@ shadowJar {
         attributes 'FMLAT': 'dynmap_at.cfg'
     }
 }
+
 shadowJar.doLast {
     task ->
         ant.checksum file: task.archivePath
