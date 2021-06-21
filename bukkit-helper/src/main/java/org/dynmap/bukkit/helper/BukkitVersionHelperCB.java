@@ -61,7 +61,7 @@ public class BukkitVersionHelperCB extends BukkitVersionHelperGeneric {
         /* Get getHandle() method */
         try {
         	try {
-				Class.forName("red.mohist.Mohist");
+				Class.forName("com.mohistmc.MohistMC");
 				return "net.minecraft.server.v1_12_R1";
 			} catch (Exception x) {
 				Method m = srv.getClass().getMethod("getHandle");
